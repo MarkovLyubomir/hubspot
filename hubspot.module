@@ -40,4 +40,53 @@ function hubspot_webform_submission_insert($node, $submission)
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
     $hapi->executeInsertLead($formName, $values);
 }
+
+/**
+ * Create a WebForm component to contain the form's HubSpot POST URL.
+ */
+function hubspot_webform_component_info()
+{
+    return array(
+        'hubspot_url' => array(
+            'label' => t('HubSpot POST URL'),
+            'description' => t('The API POST URL supplied by HubSpot for this form'),
+            'features' => array(
+                'csv' => false,
+                'email' => false
+            )
+        )
+    );
+}
+
+function _webform_defaults_hubspot_url()
+{
+    return array(
+        'name' => 'HubSpot POST URL',
+        'form_key' => 'hubspot',
+        'pid' => 0,
+        'weight' => 0,
+        'value' => '',
+        'extra' => array(
+        ),
+    );
+}
+
+function _webform_edit_hubspot_url($component)
+{
+    $form = array();
+    
+    // Disable Description box
+    $form['extra']['description'] = array();
+   
+    $form['value'] = array(
+        '#type' => 'textfield',
+        '#title' => t('HubSpot POST URL'),
+        '#description' => 'That URL thingy'
+    );
+    
+    // Hide display options
+    $form['display'] = array('#type' => 'markup');
+    
+    return $form;
+}
 ?>
