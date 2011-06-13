@@ -29,12 +29,27 @@ function hubspot_webform_submission_insert($node, $submission)
     // We must find the matching field names.
     $values = array();
     
+    $hasHubSpotURL = false;
+    $hubSpotURL = '';
     foreach ($submission->data as $cid => $data)
     {
         $component = $node->webform['components'][$cid]['form_key'];
         $values[$component] = implode(',', $data['value']);
+        
+        if ($node->webform['components'][$cid]['type'] = 'hubspot_url')
+        {
+            $hasHubSpotURL = true;
+            $hubSpotURL = $data['value'];
+        }
     }
     
+    if (!$hasHubSpotURL)
+    {
+        // We're only interested in forms with HubSpot URLs to POST to
+        return;
+    }
+    
+        
     $hapi = new HAPILeads();
     
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
@@ -88,5 +103,30 @@ function _webform_edit_hubspot_url($component)
     $form['display'] = array('#type' => 'markup');
     
     return $form;
+}
+
+/**
+ * Implements _webform_render_component().
+ */
+function _webform_render_hubspot_url($component, $value = NULL)
+{
+    $element = array(
+        '#type' => 'hidden',
+        '#title' => check_plain($component['name']),
+        '#default_value' => check_url($component['value']),
+        '#weight' => $component['weight'],
+    );
+
+    if (isset($value[0]))
+    {
+        $element['#default_value'] = $value[0];
+    }
+
+    return $element;
+}
+
+function _webform_display_hubspot_url($component, $value, $format = 'html')
+{
+    return array();
 }
 ?>
