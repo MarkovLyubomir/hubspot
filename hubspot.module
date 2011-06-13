@@ -29,7 +29,6 @@ function hubspot_webform_submission_insert($node, $submission)
     // We must find the matching field names.
     $values = array();
     
-    $hasHubSpotURL = false;
     $hubSpotURL = '';
     foreach ($submission->data as $cid => $data)
     {
@@ -38,12 +37,11 @@ function hubspot_webform_submission_insert($node, $submission)
         
         if ($node->webform['components'][$cid]['type'] = 'hubspot_url')
         {
-            $hasHubSpotURL = true;
             $hubSpotURL = $data['value'];
         }
     }
     
-    if (!$hasHubSpotURL)
+    if (empty($hubSpotURL))
     {
         // We're only interested in forms with HubSpot URLs to POST to
         return;
