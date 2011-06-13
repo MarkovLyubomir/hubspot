@@ -1,6 +1,43 @@
 <?php
+
+function hubspot_menu()
+{
+    $items = array();
+    
+    $items['admin/config/hubspot'] = array(
+        'title' => 'HubSpot integration settings',
+        'description' => 'Set up HubSpot integration and leads insertion.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('hubspot_admin_settings'),
+        'access arguments' => array('administer site configuration'),
+        'type' => MENU_NORMAL_ITEM,
+        'file' => 'hubspot.admin.inc'
+    );
+    
+    return $items;
+}
+
+/**
+ * Intercept the WebForm submission and send it off to HubSpot.
+ */
 function hubspot_webform_submission_insert($node, $submission)
 {
-    var_dump($submission);
+    if ($submission->is_draft == 1)
+        return;
+    
+    // Now, $submission->data is an array indexed by component ID.
+    // We must find the matching field names.
+    $values = array();
+    
+    foreach ($submission->data as $cid => $data)
+    {
+        $component = $node->webform['components'][$cid]['form_key'];
+        $values[$component] = $data;
+    }
+    
+    $hapi = new HAPILeads();
+    
+    $hapi->setHAPIKey($key); // TODO
+    $hapi->executeInsertLead($formName, $values);
 }
 ?>
