@@ -53,7 +53,7 @@ function hubspot_webform_submission_insert($node, $submission)
     $hapi = new HAPILeads();
     
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
-    $hapi->executeInsertLead($formName, $values);
+    $hapi->executeInsertLead($formName, $hubSpotURL, $values);
 }
 
 /**
