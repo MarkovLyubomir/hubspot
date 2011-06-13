@@ -425,11 +425,12 @@ class HAPILeads
      * Executes the HubSpot API POST to insert a lead
      *
      * @param string $formName Name of lead form to insert to
+     * @param string $formURL HubSpot-provided POST URL to submit to
      * @param array $fields Form fields, such as name and contact info
      *
      * @return GetResponse array stuff
      */
-    public function executeInsertLead($formName, $fields)
+    public function executeInsertLead($formName, $formURL, $fields)
     {
         $strPost = "";
         
@@ -453,7 +454,7 @@ class HAPILeads
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
-        curl_setopt($ch, CURLOPT_URL, $this->createPostRequestURL());
+        curl_setopt($ch, CURLOPT_URL, $formURL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $this->PostResponse['Data'] = curl_exec($ch);
         $this->PostResponse['Error'] = curl_errno($ch);
@@ -462,21 +463,6 @@ class HAPILeads
         curl_close($ch);
         
         return $this->PostResponse;
-    }
-    
-    /**
-     * Creates the HubSpot API POST URL based on instance properties
-     *
-     * @return PostURL
-     */ 
-    public function createPostRequestURL()
-    {
-        $this->PostURL = $this->APIBaseURL . '/';
-        $this->PostURL .= $this->HubSpotObject . '/';
-        $this->PostURL .= $this->APIVersion . '/';      
-        $this->PostURL .= 'lead/';
-        
-        return $this->PostURL;
     }
 }
 
