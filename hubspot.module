@@ -1,0 +1,6 @@
+<?php
+function hubspot_webform_submission_insert($node, $submission)
+{
+    var_dump($submission);
+}
+?>
