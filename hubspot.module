@@ -32,7 +32,7 @@ function hubspot_webform_submission_insert($node, $submission)
     foreach ($submission->data as $cid => $data)
     {
         $component = $node->webform['components'][$cid]['form_key'];
-        $values[$component] = $data;
+        $values[$component] = implode(',', $data['value']);
     }
     
     $hapi = new HAPILeads();
