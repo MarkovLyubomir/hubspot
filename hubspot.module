@@ -37,7 +37,7 @@ function hubspot_webform_submission_insert($node, $submission)
         
         if ($node->webform['components'][$cid]['type'] = 'hubspot_url')
         {
-            $hubSpotURL = $data['value'];
+            $hubSpotURL = $data['value'][0];
         }
     }
     
@@ -46,7 +46,6 @@ function hubspot_webform_submission_insert($node, $submission)
         // We're only interested in forms with HubSpot URLs to POST to
         return;
     }
-    
         
     $hapi = new HAPILeads();
     
