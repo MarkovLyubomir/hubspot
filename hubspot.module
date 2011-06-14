@@ -76,10 +76,12 @@ function hubspot_webform_component_info()
     return array(
         'hubspot_url' => array(
             'label' => t('HubSpot POST URL'),
-            'description' => t('The API POST URL supplied by HubSpot for this form'),
+            'description' => t('A HubSpot API POST URL, to submit a form\'s contents to HubSpot Leads.'),
             'features' => array(
                 'csv' => false,
-                'email' => false
+                'email' => false,
+                'title_display' => false,
+                'required' => false
             )
         )
     );
@@ -108,12 +110,22 @@ function _webform_edit_hubspot_url($component)
     $form['value'] = array(
         '#type' => 'textfield',
         '#title' => t('HubSpot POST URL'),
-        '#description' => 'That URL thingy',
+        '#description' => t('The API POST URL provided under HubSpot\'s Lead API settings for this form.'),
         '#default_value' => $component['value']
     );
     
     // Hide display options
     $form['display'] = array('#type' => 'markup');
+    
+    $form['name'] = array(
+        '#type' => 'textfield',
+        '#default_value' => $component['name'],
+        '#title' => t('Label'),
+        '#description' => t('The name of this field. This field will not be displayed to users submitting the form.'),
+        '#required' => TRUE,
+        '#weight' => -10,
+        '#maxlength' => 255,
+    );
     
     return $form;
 }
