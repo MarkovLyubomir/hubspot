@@ -135,7 +135,7 @@ function _webform_render_hubspot_url($component, $value = NULL) {
   $element = array(
     '#type' => 'hidden',
     '#title' => check_plain($component['name']),
-    '#default_value' => check_url($component['value']),
+    '#value' => $component['value'],
     '#weight' => $component['weight'],
   );
 

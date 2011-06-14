@@ -447,7 +447,7 @@ class HAPILeads
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
-        curl_setopt($ch, CURLOPT_URL, html_entity_decode($formURL));
+        curl_setopt($ch, CURLOPT_URL, $formURL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $this->PostResponse['Data'] = curl_exec($ch);
         $this->PostResponse['Error'] = curl_errno($ch);
