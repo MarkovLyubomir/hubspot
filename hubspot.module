@@ -32,7 +32,7 @@ function hubspot_webform_submission_insert($node, $submission)
     $hubSpotURL = '';
     foreach ($submission->data as $cid => $data)
     {
-        if ($node->webform['components'][$cid]['type'] = 'hubspot_url')
+        if ($node->webform['components'][$cid]['type'] == 'hubspot_url')
         {
             $hubSpotURL = $data['value'][0];
             continue; // omit HubSpot URL from POST
