@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
+ */
+
 
 function hubspot_menu()
 {
@@ -59,7 +64,7 @@ function hubspot_webform_submission_insert($node, $submission)
     
     if (empty($r['Error']))
     {
-        watchdog('hubspot', strip_tags($r['Data']), null, WATCHDOG_INFO);
+        watchdog('hubspot', strip_tags($r['Data']), NULL, WATCHDOG_INFO);
     }
     else
     {
@@ -78,15 +83,18 @@ function hubspot_webform_component_info()
             'label' => t('HubSpot POST URL'),
             'description' => t('A HubSpot API POST URL, to submit a form\'s contents to HubSpot Leads.'),
             'features' => array(
-                'csv' => false,
-                'email' => false,
-                'title_display' => false,
-                'required' => false
+                'csv' => FALSE,
+                'email' => FALSE,
+                'title_display' => FALSE, // this prevents the "Display" field from being displayed while editing the component
+                'required' => FALSE
             )
         )
     );
 }
 
+/**
+ * Provide default values for this component.
+ */
 function _webform_defaults_hubspot_url()
 {
     return array(
@@ -117,6 +125,7 @@ function _webform_edit_hubspot_url($component)
     // Hide display options
     $form['display'] = array('#type' => 'markup');
     
+    // Overwrite the "Label" field to provide a better description
     $form['name'] = array(
         '#type' => 'textfield',
         '#default_value' => $component['name'],
@@ -131,7 +140,7 @@ function _webform_edit_hubspot_url($component)
 }
 
 /**
- * Implements _webform_render_component().
+ * Implements _webform_render_component(). Render this as a hidden field.
  */
 function _webform_render_hubspot_url($component, $value = NULL)
 {
@@ -150,6 +159,9 @@ function _webform_render_hubspot_url($component, $value = NULL)
     return $element;
 }
 
+/**
+ * When displaying the form results to an admin, don't bother showing the HubSpot URL.
+ */
 function _webform_display_hubspot_url($component, $value, $format = 'html')
 {
     return array();
@@ -158,7 +170,7 @@ function _webform_display_hubspot_url($component, $value, $format = 'html')
 function hubspot_help($path, $arg)
 {
     $output = '';
-    switch($path)
+    switch ($path)
     {
         case 'admin/help#hubspot':
             $output .= '<h3>' . t('About') . '</h3>';
@@ -194,4 +206,3 @@ function hubspot_help($path, $arg)
     }
     return $output;
 }
-?>

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * Provides admin settings page to adjust HubSpot API key.
+ */
+
 function hubspot_admin_settings()
 {
     $form = array();
@@ -17,4 +22,3 @@ function hubspot_admin_settings()
     
     return system_settings_form($form);
 }
-?>
