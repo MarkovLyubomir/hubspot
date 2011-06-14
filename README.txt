@@ -26,3 +26,6 @@ Further Information
 You can find more detailed help on how to use HubSpot with Webforms in this
 module's Help page in the Drupal administrator interface. Head to Help and
 select "HubSpot Drupal integration" for complete instructions.
+
+HubSpot API documentation is available at:
+  http://docs.hubapi.com/wiki/Main_Page
