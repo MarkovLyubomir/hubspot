@@ -162,7 +162,7 @@ function hubspot_help($path, $arg)
     {
         case 'admin/help#hubspot':
             $output .= '<h3>' . t('About') . '</h3>';
-            $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created with the WebForm module to submit their data to HubSpot for leads tracking.') . '</p>';
+            $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created with the Webform module to submit their data to HubSpot for leads tracking.') . '</p>';
             
             $output .= '<h3>' . t('Sending a form to HubSpot') . '</h3>';
             $output .= '<p>' . t('To have a form\'s data sent to HubSpot for leads tracking, complete the following steps:') . '</p>';
@@ -173,7 +173,24 @@ function hubspot_help($path, $arg)
             $output .= '<li>' . t('In your Drupal admin, use the Add content page to create a new Webform. Enter as many questions ("components") as you\'d like.') . '</li>';
             $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided and save the form.') . '</li>';
             $output .= '</ul>';
-            $output .= '<p>' . t('The webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
+            $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
+            
+            $output .= '<h3>' . t('Form field names') . '</h3>';
+            $output .= '<p>' . t('Certain form field keys have significance with HubSpot. For example, submitting a field with the key "FirstName" allows HubSpot to automatically recognize it as the person\'s first name when displaying the lead information. Here is a list of HubSpot-recognized field keys:') . '</p>';
+            $output .= '<dl>';
+            $output .= '<dt>' . t('FirstName, LastName, and FullName') . '</dt>';
+            $output .= '<dd>' . t('Use FirstName or LastName to send those fields separately; send FullName for HubSpot to automatically split the name into first and last names.') . '</dd>';
+            $output .= '<dt>' . t('Email, Phone, Fax, Website, and TwitterHandle') . '</dt>';
+            $output .= '<dd>' . t('Specify these field keys to get the user\'s contact information recognized by HubSpot.') . '</dd>';
+            $output .= '<dt>' . t('Company, NumberEmployees, AnnualRevenue, and JobTitle') . '</dt>';
+            $output .= '<dd>' . t('Capture the user\'s employment information.') . '</dd>';
+            $output .= '<dt>' . t('Address, City, State, ZipCode, Country') . '</dt>';
+            $output .= '<dd>' . t('Capture the user\'s location.') . '</dd>';
+            $output .= '<dt>' . t('Message') . '</dd>';
+            $output .= '<dd>' . t('Allow the user to send a custom message.') . '</dd>';
+            $output .= '</dl>';
+            $output .= '<p>' . t('Specify these as the <strong>Field Key</strong> when adding components in your form. The field key is not shown to users filling out the form, but only sent to HubSpot; the "Label" field specifies what your users will see.') . '</p>';
+            $output .= '<p>' . t('Note that you may provide other custom fields with any field key you like, if you have other data you wish to collect. HubSpot will store all data sent to it and display it in the "Form Data" tab when viewing each lead.') . '</p>';
     }
     return $output;
 }
