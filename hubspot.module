@@ -53,7 +53,15 @@ function hubspot_webform_submission_insert($node, $submission)
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
     $r = $hapi->executeInsertLead($hubSpotURL, $values);
     
-    watchdog('hubspot', strip_tags($r['Data']), null, WATCHDOG_INFO);
+    if (empty($r['Error']))
+    {
+        watchdog('hubspot', strip_tags($r['Data']), null, WATCHDOG_INFO);
+    }
+    else
+    {
+        watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
+                 array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+    }
 }
 
 /**
