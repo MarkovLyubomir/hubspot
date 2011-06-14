@@ -7,7 +7,7 @@
 function hubspot_menu() {
   $items = array();
 
-  $items['admin/config/hubspot'] = array(
+  $items['admin/config/content/hubspot'] = array(
     'title' => 'HubSpot integration settings',
     'description' => 'Set up HubSpot integration and leads insertion.',
     'page callback' => 'drupal_get_form',
@@ -151,6 +151,13 @@ function _webform_render_hubspot_url($component, $value = NULL) {
  */
 function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
+}
+
+function hubspot_page_build(&$page) {
+  $page['page_bottom']['hubspot_code'] = array(
+    '#type' => 'markup',
+    '#markup' => variable_get('hubspot_log_code', '')
+  );
 }
 
 function hubspot_help($path, $arg) {
