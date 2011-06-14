@@ -89,11 +89,12 @@ function _webform_edit_hubspot_url($component)
     
     // Disable Description box
     $form['extra']['description'] = array();
-   
+    
     $form['value'] = array(
         '#type' => 'textfield',
         '#title' => t('HubSpot POST URL'),
-        '#description' => 'That URL thingy'
+        '#description' => 'That URL thingy',
+        '#default_value' => $component['value']
     );
     
     // Hide display options
@@ -113,7 +114,7 @@ function _webform_render_hubspot_url($component, $value = NULL)
         '#default_value' => check_url($component['value']),
         '#weight' => $component['weight'],
     );
-
+    
     if (isset($value[0]))
     {
         $element['#default_value'] = $value[0];
