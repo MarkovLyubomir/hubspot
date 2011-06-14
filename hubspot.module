@@ -189,7 +189,7 @@ function hubspot_help($path, $arg) {
       $output .= '<dd>' . t('Capture the user\'s employment information.') . '</dd>';
       $output .= '<dt>' . t('Address, City, State, ZipCode, Country') . '</dt>';
       $output .= '<dd>' . t('Capture the user\'s location.') . '</dd>';
-      $output .= '<dt>' . t('Message') . '</dd>';
+      $output .= '<dt>' . t('Message') . '</dt>';
       $output .= '<dd>' . t('Allow the user to send a custom message.') . '</dd>';
       $output .= '</dl>';
       $output .= '<p>' . t('Specify these as the <strong>Field Key</strong> when adding components in your form. The field key is not shown to users filling out the form, but only sent to HubSpot; the "Label" field specifies what your users will see.') . '</p>';
