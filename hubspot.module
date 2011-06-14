@@ -47,7 +47,11 @@ function hubspot_webform_submission_insert($node, $submission)
         // We're only interested in forms with HubSpot URLs to POST to
         return;
     }
-        
+    
+    // These fields must be submitted with each request
+    $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
+    $values['IPAddress'] = $_SERVER['REMOTE_ADDR'];
+    
     $hapi = new HAPILeads();
     
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));

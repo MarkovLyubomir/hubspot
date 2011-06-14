@@ -433,10 +433,6 @@ class HAPILeads
     {
         $strPost = "";
         
-        // These fields must be submitted with each request
-        $fields['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
-        $fields['IPAddress'] = $_SERVER['REMOTE_ADDR'];
-        
         // Turn $fields into POST-compatible list of parameters
         foreach ($fields as $fieldName => $fieldValue)
         {
