@@ -4,6 +4,8 @@
  * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
  */
 
+require_once 'class.hapilead.php';
+
 function hubspot_menu() {
   $items = array();
 
@@ -153,11 +155,8 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
 }
 
-function hubspot_page_build(&$page) {
-  $page['page_bottom']['hubspot_code'] = array(
-    '#type' => 'markup',
-    '#markup' => variable_get('hubspot_log_code', '')
-  );
+function hubspot_footer($main = 0) {
+  return variable_get('hubspot_log_code', '');
 }
 
 function hubspot_help($path, $arg) {
