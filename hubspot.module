@@ -194,6 +194,9 @@ function hubspot_help($path, $arg) {
       $output .= '</dl>';
       $output .= '<p>' . t('Specify these as the <strong>Field Key</strong> when adding components in your form. The field key is not shown to users filling out the form, but only sent to HubSpot; the "Label" field specifies what your users will see.') . '</p>';
       $output .= '<p>' . t('Note that you may provide other custom fields with any field key you like, if you have other data you wish to collect. HubSpot will store all data sent to it and display it in the "Form Data" tab when viewing each lead.') . '</p>';
+      
+      $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
+      $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site. You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
   }
   return $output;
 }
