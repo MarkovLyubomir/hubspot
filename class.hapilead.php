@@ -424,13 +424,12 @@ class HAPILeads
     /**
      * Executes the HubSpot API POST to insert a lead
      *
-     * @param string $formName Name of lead form to insert to
      * @param string $formURL HubSpot-provided POST URL to submit to
      * @param array $fields Form fields, such as name and contact info
      *
      * @return GetResponse array stuff
      */
-    public function executeInsertLead($formName, $formURL, $fields)
+    public function executeInsertLead($formURL, $fields)
     {
         $strPost = "";
         
@@ -450,11 +449,10 @@ class HAPILeads
         $strPost = rtrim($strPost, '&'); // nuke the final ampersand
         
         // intialize cURL and send POST data
-        
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
-        curl_setopt($ch, CURLOPT_URL, $formURL);
+        curl_setopt($ch, CURLOPT_URL, html_entity_decode($formURL));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $this->PostResponse['Data'] = curl_exec($ch);
         $this->PostResponse['Error'] = curl_errno($ch);

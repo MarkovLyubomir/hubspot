@@ -51,7 +51,9 @@ function hubspot_webform_submission_insert($node, $submission)
     $hapi = new HAPILeads();
     
     $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
-    $hapi->executeInsertLead($formName, $hubSpotURL, $values);
+    $r = $hapi->executeInsertLead($hubSpotURL, $values);
+    
+    watchdog('hubspot', strip_tags($r['Data']), null, WATCHDOG_INFO);
 }
 
 /**
