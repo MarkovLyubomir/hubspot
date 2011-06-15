@@ -4,6 +4,9 @@
  * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
  */
 
+/**
+ * Implement hook_menu() to get the config page listed
+ */
 function hubspot_menu() {
   $items = array();
 
@@ -70,8 +73,7 @@ function hubspot_webform_submission_insert($node, $submission) {
  *
  * @return array with fields Data, Error, and ErrorMessage
  */
-function hubspot_insert_lead($formURL, $fields)
-{
+function hubspot_insert_lead($formURL, $fields) {
   $strPost = "";
 
   // Turn $fields into POST-compatible list of parameters
@@ -85,10 +87,10 @@ function hubspot_insert_lead($formURL, $fields)
 
   // intialize cURL and send POST data
   $ch = curl_init();
-  curl_setopt($ch, CURLOPT_POST, true);
+  curl_setopt($ch, CURLOPT_POST, TRUE);
   curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
   curl_setopt($ch, CURLOPT_URL, $formURL);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
   
   $resp = array();
   $resp['Data'] = curl_exec($ch);
@@ -188,6 +190,10 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
 }
 
+/**
+ * Implementation of hook_page_build() to inject the HubSpot JavaScript tracking code into
+ * the page footer, just before </body>.
+ */
 function hubspot_page_build(&$page) {
   $page['page_bottom']['hubspot_code'] = array(
     '#type' => 'markup',
@@ -195,6 +201,9 @@ function hubspot_page_build(&$page) {
   );
 }
 
+/**
+ * Implementation of hook_help() for the admin help page.
+ */
 function hubspot_help($path, $arg) {
   $output = '';
   switch ($path) {
