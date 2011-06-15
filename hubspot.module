@@ -4,8 +4,9 @@
  * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
  */
 
-require_once 'class.hapilead.php';
-
+/**
+ * Implement hook_menu() to get the config page listed
+ */
 function hubspot_menu() {
   $items = array();
 
@@ -53,18 +54,52 @@ function hubspot_webform_submission_insert($node, $submission) {
   $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
   $values['IPAddress'] = $_SERVER['REMOTE_ADDR'];
 
-  $hapi = new HAPILeads();
-
-  $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
-  $r = $hapi->executeInsertLead($hubSpotURL, $values);
+  $r = hubspot_insert_lead($hubSpotURL, $values);
 
   if (empty($r['Error'])) {
     watchdog('hubspot', strip_tags($r['Data']), NULL, WATCHDOG_INFO);
   }
   else {
     watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
-         array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+             array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
   }
+}
+
+/**
+ * Executes the HubSpot API POST to insert a lead
+ *
+ * @param string $formURL HubSpot-provided POST URL to submit to
+ * @param array $fields Form fields, such as name and contact info
+ *
+ * @return array with fields Data, Error, and ErrorMessage
+ */
+function hubspot_insert_lead($formURL, $fields) {
+  $strPost = "";
+
+  // Turn $fields into POST-compatible list of parameters
+  foreach ($fields as $fieldName => $fieldValue) {
+    $strPost .= urlencode($fieldName) . '=';
+    $strPost .= urlencode($fieldValue);
+    $strPost .= '&';
+  }
+
+  $strPost = rtrim($strPost, '&'); // nuke the final ampersand
+
+  // intialize cURL and send POST data
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_POST, TRUE);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
+  curl_setopt($ch, CURLOPT_URL, $formURL);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  
+  $resp = array();
+  $resp['Data'] = curl_exec($ch);
+  $resp['Error'] = curl_errno($ch);
+  $resp['ErrorMessage'] = curl_error($ch);
+
+  curl_close($ch);
+
+  return $resp;
 }
 
 /**
@@ -155,10 +190,17 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
 }
 
+/**
+ * Implementation of hook_footer() to inject the HubSpot JavaScript tracking code into
+ * the page footer, just before </body>.
+ */
 function hubspot_footer($main = 0) {
   return variable_get('hubspot_log_code', '');
 }
 
+/**
+ * Implementation of hook_help() for the admin help page.
+ */
 function hubspot_help($path, $arg) {
   $output = '';
   switch ($path) {
