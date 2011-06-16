@@ -4,8 +4,6 @@
  * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
  */
 
-require_once 'class.hapilead.php';
-
 /**
  * Implement hook_menu() to get the config page listed
  */
