@@ -6,6 +6,9 @@
 
 require_once 'class.hapilead.php';
 
+/**
+ * Implement hook_menu() to get the config page listed
+ */
 function hubspot_menu() {
   $items = array();
 
@@ -32,7 +35,7 @@ function hubspot_webform_submission_insert($node, $submission) {
   // Now, $submission->data is an array indexed by component ID.
   // We must find the matching field names.
   $values = array();
-
+  
   $hubSpotURL = '';
   foreach ($submission->data as $cid => $data) {
     if ($node->webform['components'][$cid]['type'] == 'hubspot_url') {
@@ -51,20 +54,83 @@ function hubspot_webform_submission_insert($node, $submission) {
 
   // These fields must be submitted with each request
   $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
-  $values['IPAddress'] = $_SERVER['REMOTE_ADDR'];
+  $values['IPAddress'] = ip_address();
 
-  $hapi = new HAPILeads();
-
-  $hapi->setHAPIKey(variable_get('hubspot_apikey', ''));
-  $r = $hapi->executeInsertLead($hubSpotURL, $values);
+  $r = hubspot_insert_lead($hubSpotURL, $values);
 
   if (empty($r['Error'])) {
-    watchdog('hubspot', strip_tags($r['Data']), NULL, WATCHDOG_INFO);
+    watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
+             array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
   }
   else {
-    watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
-         array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+    watchdog('hubspot', 'cURL error when submitting HubSpot data from Webform "%form": @error',
+             array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
+
+    if (variable_get('hubspot_debug_on', 0)) {
+      drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+                  language_default(), array('errormsg' => $r['ErrorMessage'], 'hubspot_url' => $hubSpotURL,
+                                            'node_title' => $node->title),
+                  variable_get('site_mail', ''));
+    }
   }
+}
+
+/**
+ * Implements hook_mail() to send error messages to the administrator.
+ */
+function hubspot_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'curl_error':
+      $message['subject'] = t('HubSpot leads insertion error');
+      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a cURL error occurred.',
+                             array('@form' => $params['node_title']));
+      $message['body'][] = t('Error message: @message', array('@message' => $params['errormsg']));
+      $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
+      $message['body'][] = t('To adjust the debugging settings, visit @url',
+                             array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
+      break;
+  }
+}
+
+/**
+ * Executes the HubSpot API POST to insert a lead
+ *
+ * @param string $formURL HubSpot-provided POST URL to submit to
+ * @param array $fields Form fields, such as name and contact info
+ *
+ * @return array with fields Data, Error, ErrorMessage, and HTTPCode.
+ *         Error and ErrorMessage are the cURL error number and message,
+ *         respectively (Error = 0 if no error), and HTTPCode is the HTTP
+ *         response code of the request.
+ */
+function hubspot_insert_lead($formURL, $fields) {
+  $strPost = "";
+
+  // Turn $fields into POST-compatible list of parameters
+  foreach ($fields as $fieldName => $fieldValue) {
+    $strPost .= urlencode($fieldName) . '=';
+    $strPost .= urlencode($fieldValue);
+    $strPost .= '&';
+  }
+
+  $strPost = rtrim($strPost, '&'); // nuke the final ampersand
+
+  // intialize cURL and send POST data
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_POST, TRUE);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
+  curl_setopt($ch, CURLOPT_URL, $formURL);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  
+  $resp = array();
+  $resp['Data'] = curl_exec($ch);
+  $resp['Error'] = curl_errno($ch);
+  $resp['ErrorMessage'] = curl_error($ch);
+  $resp['HTTPCode'] = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+  curl_close($ch);
+
+  return $resp;
 }
 
 /**
@@ -155,10 +221,17 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
 }
 
+/**
+ * Implementation of hook_footer() to inject the HubSpot JavaScript tracking code into
+ * the page footer, just before </body>.
+ */
 function hubspot_footer($main = 0) {
   return variable_get('hubspot_log_code', '');
 }
 
+/**
+ * Implementation of hook_help() for the admin help page.
+ */
 function hubspot_help($path, $arg) {
   $output = '';
   switch ($path) {
@@ -176,6 +249,7 @@ function hubspot_help($path, $arg) {
       $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided and save the form.') . '</li>';
       $output .= '</ul>';
       $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
+      $output .= '<p>' . t('Please note that HubSpot applies a 500-character limit to each form field submitted, so you may want to set the "Maxlength" setting on the Webform fields appropriately.') . '</p>';
 
       $output .= '<h3>' . t('Form field names') . '</h3>';
       $output .= '<p>' . t('Certain form field keys have significance with HubSpot. For example, submitting a field with the key "FirstName" allows HubSpot to automatically recognize it as the person\'s first name when displaying the lead information. Here is a list of HubSpot-recognized field keys:') . '</p>';
@@ -196,6 +270,7 @@ function hubspot_help($path, $arg) {
       
       $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
       $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site. You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
+      break;
   }
   return $output;
 }

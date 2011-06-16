@@ -2,4 +2,3 @@ name = HubSpot Drupal integration
 description = "Provides HubSpot leads API integration with Drupal."
 core = 6.x
 dependencies[] = webform
-
