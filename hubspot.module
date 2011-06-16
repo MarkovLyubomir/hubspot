@@ -220,14 +220,11 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
 }
 
 /**
- * Implementation of hook_page_build() to inject the HubSpot JavaScript tracking code into
+ * Implementation of hook_footer() to inject the HubSpot JavaScript tracking code into
  * the page footer, just before </body>.
  */
-function hubspot_page_build(&$page) {
-  $page['page_bottom']['hubspot_code'] = array(
-    '#type' => 'markup',
-    '#markup' => variable_get('hubspot_log_code', '')
-  );
+function hubspot_footer($main = 0) {
+  return variable_get('hubspot_log_code', '');
 }
 
 /**
