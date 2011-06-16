@@ -10,40 +10,40 @@ function hubspot_admin_settings() {
 
   $form['hapi'] = array(
     '#title' => t('HubSpot API Settings'),
-    '#type' => 'fieldset'
+    '#type' => 'fieldset',
   );
 
   $form['hapi']['hubspot_apikey'] = array(
     '#title' => t('HubSpot API Key'),
     '#type' => 'textfield',
     '#default_value' => variable_get('hubspot_apikey', ''),
-    '#description' => t('This can be requested from HubSpot and is required for integration to function.')
+    '#description' => t('This can be requested from HubSpot and is required for integration to function.'),
   );
   
   $form['hapi']['hubspot_log_code'] = array(
     '#title' => t('HubSpot Logging Code'),
     '#type' => 'textarea',
     '#default_value' => variable_get('hubspot_log_code', ''),
-    '#description' => t('To enable HubSpot traffic logging on your site, paste the HubSpot logging code here.')
+    '#description' => t('To enable HubSpot traffic logging on your site, paste the HubSpot logging code here.'),
   );
   
   $form['debug'] = array(
     '#title' => t('HubSpot Debugging Settings'),
-    '#type' => 'fieldset'
+    '#type' => 'fieldset',
   );
   
   $form['debug']['hubspot_debug_on'] = array(
     '#title' => t('Debugging enabled'),
     '#type' => 'checkbox',
     '#default_value' => variable_get('hubspot_debug_on', 0),
-    '#description' => t('If debugging is enabled, HubSpot errors will be emailed to the address below. Otherwise, they will be logged to the regular Drupal error log.')
+    '#description' => t('If debugging is enabled, HubSpot errors will be emailed to the address below. Otherwise, they will be logged to the regular Drupal error log.'),
   );
   
   $form['debug']['hubspot_debug_email'] = array(
     '#title' => t('Debugging email'),
     '#type' => 'textfield',
     '#default_value' => variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-    '#description' => t('Email error reports to this address if debugging is enabled')
+    '#description' => t('Email error reports to this address if debugging is enabled'),
   );
   
   return system_settings_form($form);
