@@ -60,8 +60,8 @@ function hubspot_webform_submission_insert($node, $submission) {
     watchdog('hubspot', strip_tags($r['Data']), NULL, WATCHDOG_INFO);
   }
   else {
-    watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
-             array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+    watchdog('hubspot', 'cURL error when submitting HubSpot data from form "%form": @error',
+             array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
 
     if (variable_get('hubspot_debug_on', 0)) {
       drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
