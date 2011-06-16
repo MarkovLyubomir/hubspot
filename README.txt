@@ -29,3 +29,11 @@ select "HubSpot Drupal integration" for complete instructions.
 
 HubSpot API documentation is available at:
   http://docs.hubapi.com/wiki/Main_Page
+
+Sponsorship
+-----------
+
+This project is sponsored by Digett, a Drupal-friendly San Antonio web design
+company with a focus on inbound marketing. Need additional features or custom
+styling? Contact us.
+  http://www.digett.com/
