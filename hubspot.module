@@ -60,7 +60,7 @@ function hubspot_webform_submission_insert($node, $submission) {
     watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
              array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
   }
-  else if (!empty($r['Error'])) {
+  elseif (!empty($r['Error'])) {
     watchdog('hubspot', 'cURL error when submitting HubSpot data from Webform "%form": @error',
              array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
 
@@ -290,6 +290,9 @@ function hubspot_help($path, $arg) {
       $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
       $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site. You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
       break;
+    
+    case 'node/%/webform':
+      $output .= '<p>' . t('If you\'d like this form\'s results to be posted to HubSpot\'s leads tracking system, make sure it has a "HubSput POST URL" component filled in with the information from the HubSpot Lead API page in your HubSpot settings.') . '</p>';
   }
   return $output;
 }
