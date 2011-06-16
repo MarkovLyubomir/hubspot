@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Ensure the cURL extension is properly loaded and available before installing.
+ */
+
+/**
+ * Implement hook_requirements().
+ */
+function webform_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  
+  $requirements['hubspot_curl'] = array('title' => $t('HubSpot cURL library'));
+  
+  if (!extension_loaded('curl') || !function_exists('curl_init')) {
+    $requirements['hubspot_curl']['description'] = $t('HubSpot API integration requires the cURL PHP module to be installed.');
+    $requirements['hubspot_curl']['severity'] = REQUIREMENT_ERROR;
+    if ($phase == 'runtime') {
+      $requirements['hubspot_curl']['value'] = $t('Missing');
+    }
+  }
+  else {
+    $requirements['hubspot_curl']['value'] = $t('Enabled');
+    $requirements['hubspot_curl']['severity'] = REQUIREMENT_OK;
+  }
+  
+  return $requirements;
+}
