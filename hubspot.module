@@ -221,6 +221,7 @@ function hubspot_help($path, $arg) {
       $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided and save the form.') . '</li>';
       $output .= '</ul>';
       $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
+      $output .= '<p>' . t('Please note that HubSpot applies a 500-character limit to each form field submitted, so you may want to set the "Maxlength" setting on the Webform fields appropriately.') . '</p>';
 
       $output .= '<h3>' . t('Form field names') . '</h3>';
       $output .= '<p>' . t('Certain form field keys have significance with HubSpot. For example, submitting a field with the key "FirstName" allows HubSpot to automatically recognize it as the person\'s first name when displaying the lead information. Here is a list of HubSpot-recognized field keys:') . '</p>';
