@@ -57,10 +57,11 @@ function hubspot_webform_submission_insert($node, $submission) {
   $r = hubspot_insert_lead($hubSpotURL, $values);
 
   if (empty($r['Error'])) {
-    watchdog('hubspot', strip_tags($r['Data']), NULL, WATCHDOG_INFO);
+    watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
+             array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
   }
   else {
-    watchdog('hubspot', 'cURL error when submitting HubSpot data from form "%form": @error',
+    watchdog('hubspot', 'cURL error when submitting HubSpot data from Webform "%form": @error',
              array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
 
     if (variable_get('hubspot_debug_on', 0)) {
