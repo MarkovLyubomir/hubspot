@@ -33,7 +33,7 @@ function hubspot_webform_submission_insert($node, $submission) {
   // Now, $submission->data is an array indexed by component ID.
   // We must find the matching field names.
   $values = array();
-
+  
   $hubSpotURL = '';
   foreach ($submission->data as $cid => $data) {
     if ($node->webform['components'][$cid]['type'] == 'hubspot_url') {
@@ -62,6 +62,25 @@ function hubspot_webform_submission_insert($node, $submission) {
   else {
     watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
              array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+    if (variable_get('hubspot_debug_on', 0)) {
+      drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+                  language_default(), array('errormsg' => $r['ErrorMessage'], 'hubspot_url' => $hubSpotURL,
+                                            'node_title' => $node->title),
+                  variable_get('site_mail', ''));
+    }
+  }
+}
+
+function hubspot_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'curl_error':
+      $message['subject'] = t('HubSpot leads insertion error');
+      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a cURL error occurred.',
+                             array('@form' => $params['node_title']));
+      $message['body'][] = t('Error message: @message', array('@message' => $params['errormsg']));
+      $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
+      $message['body'][] = t('To adjust the debugging settings, visit @url',
+                             array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
   }
 }
 
@@ -71,7 +90,10 @@ function hubspot_webform_submission_insert($node, $submission) {
  * @param string $formURL HubSpot-provided POST URL to submit to
  * @param array $fields Form fields, such as name and contact info
  *
- * @return array with fields Data, Error, and ErrorMessage
+ * @return array with fields Data, Error, ErrorMessage, and HTTPCode.
+ *         Error and ErrorMessage are the cURL error number and message,
+ *         respectively (Error = 0 if no error), and HTTPCode is the HTTP
+ *         response code of the request.
  */
 function hubspot_insert_lead($formURL, $fields) {
   $strPost = "";
@@ -96,6 +118,7 @@ function hubspot_insert_lead($formURL, $fields) {
   $resp['Data'] = curl_exec($ch);
   $resp['Error'] = curl_errno($ch);
   $resp['ErrorMessage'] = curl_error($ch);
+  $resp['HTTPCode'] = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
   curl_close($ch);
 
