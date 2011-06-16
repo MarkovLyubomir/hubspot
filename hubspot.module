@@ -56,11 +56,11 @@ function hubspot_webform_submission_insert($node, $submission) {
 
   $r = hubspot_insert_lead($hubSpotURL, $values);
 
-  if (empty($r['Error'])) {
+  if (empty($r['Error']) && strpos($r['Data'], 'successfully') !== FALSE) {
     watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
              array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
   }
-  else {
+  else if (!empty($r['Error'])) {
     watchdog('hubspot', 'cURL error when submitting HubSpot data from Webform "%form": @error',
              array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
 
@@ -71,23 +71,41 @@ function hubspot_webform_submission_insert($node, $submission) {
                   variable_get('site_mail', ''));
     }
   }
+  else {
+    watchdog('hubspot', 'HubSpot error when submitting Webform "%form": @error',
+             array('@error' => $r['Data'], '%form' => $node->title), WATCHDOG_ERROR);
+    
+    if (variable_get('hubspot_debug_on', 0)) {
+      drupal_mail('hubspot', 'hub_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+                  language_default(), array('errormsg' => $r['Data'], 'hubspot_url' => $hubSpotURL,
+                                            'node_title' => $node->title),
+                  variable_get('site_mail', ''));
+    }
+  }
 }
 
 /**
  * Implements hook_mail() to send error messages to the administrator.
  */
 function hubspot_mail($key, &$message, $params) {
+  $message['subject'] = t('HubSpot leads insertion error');
+
   switch ($key) {
     case 'curl_error':
-      $message['subject'] = t('HubSpot leads insertion error');
       $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a cURL error occurred.',
                              array('@form' => $params['node_title']));
-      $message['body'][] = t('Error message: @message', array('@message' => $params['errormsg']));
-      $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
-      $message['body'][] = t('To adjust the debugging settings, visit @url',
-                             array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
+      break;
+    
+    case 'hub_error':
+      $message['body'][] = t('Upon submitting the Webform "@form" to HubSpot, an error was returned.',
+                             array('@form' => $params['node_title']));
       break;
   }
+  
+  $message['body'][] = t('Error message: @message', array('@message' => $params['errormsg']));
+  $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
+  $message['body'][] = t('To adjust the debugging settings, visit @url',
+                         array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
 }
 
 /**
@@ -220,11 +238,14 @@ function _webform_display_hubspot_url($component, $value, $format = 'html') {
 }
 
 /**
- * Implementation of hook_footer() to inject the HubSpot JavaScript tracking code into
+ * Implementation of hook_page_build() to inject the HubSpot JavaScript tracking code into
  * the page footer, just before </body>.
  */
-function hubspot_footer($main = 0) {
-  return variable_get('hubspot_log_code', '');
+function hubspot_page_build(&$page) {
+  $page['page_bottom']['hubspot_code'] = array(
+    '#type' => 'markup',
+    '#markup' => variable_get('hubspot_log_code', '')
+  );
 }
 
 /**
