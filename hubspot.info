@@ -1,4 +1,5 @@
 name = HubSpot Drupal integration
 description = "Provides HubSpot leads API integration with Drupal."
-core = 6.x
+core = 7.x
 dependencies[] = webform
+configure = admin/config/content/hubspot
