@@ -5,7 +5,7 @@
  */
 
 /**
- * Implement hook_menu() to get the config page listed
+ * Implements hook_menu() to get the config page listed
  */
 function hubspot_menu() {
   $items = array();
@@ -17,14 +17,14 @@ function hubspot_menu() {
     'page arguments' => array('hubspot_admin_settings'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'hubspot.admin.inc'
+    'file' => 'hubspot.admin.inc',
   );
 
   return $items;
 }
 
 /**
- * Intercept the WebForm submission and send it off to HubSpot.
+ * Intercepts the WebForm submission and send it off to HubSpot.
  */
 function hubspot_webform_submission_insert($node, $submission) {
   if ($submission->is_draft == 1)
@@ -150,7 +150,7 @@ function hubspot_insert_lead($formURL, $fields) {
 }
 
 /**
- * Create a WebForm component to contain the form's HubSpot POST URL.
+ * Creates a WebForm component to contain the form's HubSpot POST URL.
  */
 function hubspot_webform_component_info() {
   return array(
@@ -160,15 +160,15 @@ function hubspot_webform_component_info() {
       'features' => array(
         'csv' => FALSE,
         'email' => FALSE,
-        'title_display' => FALSE, // this prevents the "Display" field from being displayed while editing the component
-        'required' => FALSE
-      )
-    )
+        'title_display' => FALSE, // prevents the "Display" field from being displayed while editing the component
+        'required' => FALSE,
+      ),
+    ),
   );
 }
 
 /**
- * Provide default values for this component.
+ * Provides default values for this component.
  */
 function _webform_defaults_hubspot_url() {
   return array(
@@ -177,11 +177,13 @@ function _webform_defaults_hubspot_url() {
     'pid' => 0,
     'weight' => 0,
     'value' => '',
-    'extra' => array(
-    ),
+    'extra' => array(),
   );
 }
 
+/**
+ * Implements _webform_edit_component() to adjust the HubSpot POST URL edit page.
+ */
 function _webform_edit_hubspot_url($component) {
   $form = array();
 
@@ -192,7 +194,7 @@ function _webform_edit_hubspot_url($component) {
     '#type' => 'textfield',
     '#title' => t('HubSpot POST URL'),
     '#description' => t('The API POST URL provided under HubSpot\'s Lead API settings for this form.'),
-    '#default_value' => $component['value']
+    '#default_value' => $component['value'],
   );
 
   // Hide display options
@@ -231,25 +233,25 @@ function _webform_render_hubspot_url($component, $value = NULL) {
 }
 
 /**
- * When displaying the form results to an admin, don't bother showing the HubSpot URL.
+ * When displaying the form results to an admin, don't show the HubSpot URL.
  */
 function _webform_display_hubspot_url($component, $value, $format = 'html') {
   return array();
 }
 
 /**
- * Implementation of hook_page_build() to inject the HubSpot JavaScript tracking code into
+ * Implements hook_page_build() to inject the HubSpot JavaScript tracking code into
  * the page footer, just before </body>.
  */
 function hubspot_page_build(&$page) {
   $page['page_bottom']['hubspot_code'] = array(
     '#type' => 'markup',
-    '#markup' => variable_get('hubspot_log_code', '')
+    '#markup' => variable_get('hubspot_log_code', ''),
   );
 }
 
 /**
- * Implementation of hook_help() for the admin help page.
+ * Implements hook_help() for the admin help page.
  */
 function hubspot_help($path, $arg) {
   $output = '';

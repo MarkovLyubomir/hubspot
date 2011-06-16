@@ -1,11 +1,11 @@
 <?php
 /**
  * @file
- * Ensure the cURL extension is properly loaded and available before installing.
+ * Ensures the cURL extension is properly loaded and available before installing.
  */
 
 /**
- * Implement hook_requirements().
+ * Implements hook_requirements().
  */
 function webform_requirements($phase) {
   $requirements = array();
