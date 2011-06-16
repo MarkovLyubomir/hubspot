@@ -62,6 +62,7 @@ function hubspot_webform_submission_insert($node, $submission) {
   else {
     watchdog('hubspot', 'cURL error when submitting HubSpot data: @error',
              array('@error' => $r['ErrorMessage']), WATCHDOG_ERROR);
+
     if (variable_get('hubspot_debug_on', 0)) {
       drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
                   language_default(), array('errormsg' => $r['ErrorMessage'], 'hubspot_url' => $hubSpotURL,
@@ -71,6 +72,9 @@ function hubspot_webform_submission_insert($node, $submission) {
   }
 }
 
+/**
+ * Implements hook_mail() to send error messages to the administrator.
+ */
 function hubspot_mail($key, &$message, $params) {
   switch ($key) {
     case 'curl_error':
@@ -81,6 +85,7 @@ function hubspot_mail($key, &$message, $params) {
       $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
       $message['body'][] = t('To adjust the debugging settings, visit @url',
                              array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
+      break;
   }
 }
 
@@ -265,6 +270,7 @@ function hubspot_help($path, $arg) {
       
       $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
       $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site. You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
+      break;
   }
   return $output;
 }
