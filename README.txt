@@ -2,7 +2,8 @@ Requirements
 ------------
 
 This module currently requires Drupal 7.x, Webform 3.x, and a HubSpot account
-with access to the HubSpot API.
+with access to the HubSpot API. The cURL module for PHP must be installed on
+your server.
 
 Installation
 ------------
@@ -19,6 +20,10 @@ https://hubapi.com/keys/get
 The JavaScript tracking code can be found on the HubSpot Settings page, under
 External Site Traffic Logging. Copy and paste it directly into the
 configuration page and it will automatically be inserted into your site.
+
+If Webform submissions don't seem to be working, check the Drupal error log or
+enable the debugging system in this module's configuration page. Any HubSpot
+errors will then be emailed to you directly so you can diagnose the issue.
 
 Further Information
 -------------------
