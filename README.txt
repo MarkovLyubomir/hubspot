@@ -25,6 +25,13 @@ If Webform submissions don't seem to be working, check the Drupal error log or
 enable the debugging system in this module's configuration page. Any HubSpot
 errors will then be emailed to you directly so you can diagnose the issue.
 
+If you need to uninstall the module, disable it and uninstall it completely
+through the Uninstall tab. When the module is disabled, the Webform module
+won't know how to handle the HubSpot POST URL field and may throw some errors;
+when you uninstall this module completely, it will automatically remove the
+POST URL field to prevent any issues. Alternately, you can manually remove
+the POST URL field from each affected Webform.
+
 Further Information
 -------------------
 
