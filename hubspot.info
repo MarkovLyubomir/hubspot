@@ -3,3 +3,4 @@ description = "Provides HubSpot leads API integration with Drupal."
 core = 7.x
 dependencies[] = webform
 configure = admin/config/content/hubspot
+package = Webform
