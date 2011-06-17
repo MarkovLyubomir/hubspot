@@ -33,7 +33,7 @@ function webform_requirements($phase) {
  */
 function hubspot_install() {
   drupal_set_message(st('The HubSpot module has been successfully installed. Configure it in the !link.',
-                        array('!link' => l('HubSpot integration settings', 'admin/config/content/hubspot')), 'status'));
+                        array('!link' => l('HubSpot integration settings', 'admin/config/content/hubspot'))), 'status');
 }
 
 /**
