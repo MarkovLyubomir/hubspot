@@ -27,3 +27,32 @@ function webform_requirements($phase) {
   
   return $requirements;
 }
+
+/**
+ * Implements hook_install() to notify user of successful installation.
+ */
+function hubspot_install() {
+  drupal_set_message(st('The HubSpot module has been successfully installed. Configure it in the !link.',
+                        array('!link' => l('HubSpot integration settings', 'admin/config/content/hubspot')), 'status'));
+}
+
+/**
+ * Implements hook_uninstall() to remove our saved variables and all traces of the hubspot_url component
+ */
+function hubspot_uninstall() {
+  variable_del('hubspot_debug_on');
+  variable_del('hubspot_debug_email');
+  variable_del('hubspot_apikey');
+  variable_del('hubspot_log_code');
+  
+  db_delete('webform_component')
+    ->condition('type', 'hubspot_url')
+    ->execute();
+}
+
+/**
+ * Implements hook_disable() to warn of possible errors with HubSpot webforms.
+ */
+function hubspot_disable() {
+  drupal_set_message(st('With the HubSpot module disabled, you may experience errors viewing and editing your HubSpot-enabled forms. Delete the HubSpot POST URL field or uninstall this module entirely to clear the errors.'), 'warning');
+}
