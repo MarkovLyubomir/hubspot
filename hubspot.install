@@ -7,7 +7,7 @@
 /**
  * Implements hook_requirements().
  */
-function webform_requirements($phase) {
+function hubspot_requirements($phase) {
   $requirements = array();
   $t = get_t();
   
