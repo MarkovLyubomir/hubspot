@@ -246,6 +246,89 @@ function hubspot_page_build(&$page) {
 }
 
 /**
+ * Implements hook_block_info() to provide a HubSpot recent leads block.
+ */
+function hubspot_block_info() {
+  $blocks = array();
+  
+  $blocks['hubspot_recent'] = array(
+    'info' => t('HubSpot Recent Leads'),
+    'properties' => array('administrative' => TRUE),
+  );
+  
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view() to provide a HubSpot recent leads block.
+ */
+function hubspot_block_view($delta = '') {
+  $block = array();
+  
+  switch ($delta) {
+    case 'hubspot_recent':
+      $block['subject'] = t('HubSpot Recent Leads');
+      
+      $leads = hubspot_get_recent();
+      
+      // This part of the HubSpot API returns HTTP error codes on failure, with no message
+      if (!empty($leads['Error']) || $leads['HTTPCode'] != 200) {
+        $block['content'] = t('An error occurred when fetching the HubSpot leads data: @error',
+                              array('@error' => !empty($leads['ErrorMessage']) ? $leads['ErrorMessage'] :
+                                    $leads['HTTPCode']));
+        return $block;
+      }
+      elseif (empty($leads['Data'])) {
+        $block['content'] = t('No leads to show.');
+        return $block;
+      }
+      
+      $block['content'] = array(
+        '#theme' => 'item_list',
+        '#items' => array(),
+        '#type' => 'ul',
+      );
+      
+      foreach($leads['Data'] as $lead) {
+        // Note that $lead->insertedAt comes in milliseconds, not seconds, since the epoch
+        $block['content']['#items'][] = l($lead->firstName . ' ' . $lead->lastName, $lead->leadLink) .
+                                        ' (' . format_date(intval($lead->insertedAt / 1000)) . ')';
+      }
+      
+      break;
+  }
+  
+  return $block;
+}
+
+/**
+ * Gets the most recent HubSpot leads
+ *
+ * Docs: http://docs.hubapi.com/wiki/Searching_Leads
+ *
+ * @param int $n Number of leads to fetch
+ */
+function hubspot_get_recent($n = 5) {
+  $hapiKey = variable_get('hubspot_apikey', '');
+  $n = intval($n);
+  
+  if (empty($hapiKey)) {
+    return array('Error' => 1, 'ErrorMessage' => t('No HubSpot API key specified.'));
+  }
+  
+  $hubSpotURL = "https://hubapi.com/leads/v1/list/?hapikey={$hapiKey}&sort=insertedAt&dir=desc&max={$n}";
+  
+  $ch = curl_init();
+  
+  curl_setopt($ch, CURLOPT_URL, $hubSpotURL);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  $result = curl_exec($ch);
+  
+  return array('Data' => json_decode($result), 'Error' => curl_errno($ch),
+               'ErrorMessage' => curl_error($ch), 'HTTPCode' => curl_getinfo($ch, CURLINFO_HTTP_CODE));
+}
+
+/**
  * Implements hook_help() for the admin help page.
  */
 function hubspot_help($path, $arg) {
