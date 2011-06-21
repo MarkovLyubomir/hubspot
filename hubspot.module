@@ -336,7 +336,7 @@ function hubspot_help($path, $arg) {
   switch ($path) {
     case 'admin/help#hubspot':
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created with the Webform module to submit their data to HubSpot for leads tracking. It also allows you to easily embed the HubSpot JavaScript tracking code in your site to track the visits of each lead.') . '</p>';
+      $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created with the Webform module to submit their data to HubSpot for leads tracking. It also allows you to easily embed the HubSpot JavaScript tracking code in your site to track the visits of each lead. Further information is available in the Drupal <a href="http://drupal.org/node/1195370">handbook pages for this module.</a>') . '</p>';
 
       $output .= '<h3>' . t('Creating a HubSpot Webform') . '</h3>';
       $output .= '<p>' . t('To have a Webform\'s data sent to HubSpot for leads tracking, complete the following steps:') . '</p>';
