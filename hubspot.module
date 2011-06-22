@@ -246,6 +246,16 @@ function hubspot_page_build(&$page) {
 }
 
 /**
+ * Implements hook_permission() to choose who gets to see the recent leads block
+ */
+function hubspot_permission() {
+  return array('see recent hubspot leads' => array(
+           'title' => t('See recent HubSpot leads'),
+           'description' => t('View the recent leads block when it\'s enabled.'),
+           'restrict access' => TRUE));
+}
+
+/**
  * Implements hook_block_info() to provide a HubSpot recent leads block.
  */
 function hubspot_block_info() {
@@ -267,6 +277,9 @@ function hubspot_block_view($delta = '') {
   
   switch ($delta) {
     case 'hubspot_recent':
+      if (!user_access('see recent hubspot leads')) {
+        return;
+      }
       $block['subject'] = t('HubSpot Recent Leads');
       
       $leads = hubspot_get_recent();
@@ -291,8 +304,8 @@ function hubspot_block_view($delta = '') {
       
       foreach($leads['Data'] as $lead) {
         // Note that $lead->insertedAt comes in milliseconds, not seconds, since the epoch
-        $block['content']['#items'][] = l($lead->firstName . ' ' . $lead->lastName, $lead->leadLink) .
-                                        ' (' . format_date(intval($lead->insertedAt / 1000)) . ')';
+        $block['content']['#items'][] = l($lead->firstName . ' ' . $lead->lastName, $lead->leadLink) . ' ' .
+                                        t('(@time ago)', array('@time' => format_interval(time() - intval($lead->insertedAt / 1000))));
       }
       
       break;
