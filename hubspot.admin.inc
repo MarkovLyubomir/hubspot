@@ -17,14 +17,14 @@ function hubspot_admin_settings() {
     '#title' => t('HubSpot API Key'),
     '#type' => 'textfield',
     '#default_value' => variable_get('hubspot_apikey', ''),
-    '#description' => t('This can be requested from HubSpot and is required for integration to function.'),
+    '#description' => t('This can be <a href="https://hubapi.com/keys/get">requested from HubSpot</a> and is required for the Latest Leads dashboard block to function. Inserting leads does not require an API key.'),
   );
   
   $form['hapi']['hubspot_log_code'] = array(
     '#title' => t('HubSpot Logging Code'),
     '#type' => 'textarea',
     '#default_value' => variable_get('hubspot_log_code', ''),
-    '#description' => t('To enable HubSpot traffic logging on your site, paste the HubSpot logging code here.'),
+    '#description' => t('To enable HubSpot traffic logging on your site, paste the HubSpot JavaScript logging code here.'),
   );
   
   $form['debug'] = array(
@@ -43,7 +43,7 @@ function hubspot_admin_settings() {
     '#title' => t('Debugging email'),
     '#type' => 'textfield',
     '#default_value' => variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-    '#description' => t('Email error reports to this address if debugging is enabled'),
+    '#description' => t('Email error reports to this address if debugging is enabled.'),
   );
   
   return system_settings_form($form);
