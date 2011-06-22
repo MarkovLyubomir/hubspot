@@ -40,6 +40,11 @@ You can find more detailed help on how to use HubSpot with Webforms in this
 module's Help page in the Drupal administrator interface. Head to Help and
 select "HubSpot Drupal integration" for complete instructions.
 
+Extended documentation, with instructions on using HubSpot's Salesforce
+integration and details on automated receipt emails, is available in the Drupal
+handbook pages:
+  http://drupal.org/node/1195370
+
 HubSpot API documentation is available at:
   http://docs.hubapi.com/wiki/Main_Page
 
