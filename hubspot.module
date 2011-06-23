@@ -24,7 +24,8 @@ function hubspot_menu() {
 }
 
 /**
- * Intercepts the WebForm submission and send it off to HubSpot.
+ * Intercepts the WebForm submission and send it off to HubSpot. Implements
+ * hook_webform_submission_insert().
  */
 function hubspot_webform_submission_insert($node, $submission) {
   if ($submission->is_draft == 1)
@@ -150,6 +151,7 @@ function hubspot_insert_lead($formURL, $fields) {
 
 /**
  * Creates a WebForm component to contain the form's HubSpot POST URL.
+ * Implements hook_webform_component_info().
  */
 function hubspot_webform_component_info() {
   return array(
