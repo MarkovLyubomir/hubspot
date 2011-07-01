@@ -2,8 +2,7 @@ Requirements
 ------------
 
 This module currently requires Drupal 6.x or 7.x, Webform 3.x, and a HubSpot
-account with access to the HubSpot API. The cURL module for PHP must be
-installed on your server.
+account with access to the HubSpot API.
 
 Installation
 ------------

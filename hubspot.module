@@ -62,12 +62,12 @@ function hubspot_webform_submission_insert($node, $submission) {
              array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
   }
   elseif (!empty($r['Error'])) {
-    watchdog('hubspot', 'cURL error when submitting HubSpot data from Webform "%form": @error',
-             array('@error' => $r['ErrorMessage'], '%form' => $node->title), WATCHDOG_ERROR);
+    watchdog('hubspot', 'HTTP error when submitting HubSpot data from Webform "%form": @error',
+             array('@error' => $r['Error'], '%form' => $node->title), WATCHDOG_ERROR);
 
     if (variable_get('hubspot_debug_on', 0)) {
       drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-                  language_default(), array('errormsg' => $r['ErrorMessage'], 'hubspot_url' => $hubSpotURL,
+                  language_default(), array('errormsg' => $r['Error'], 'hubspot_url' => $hubSpotURL,
                                             'node_title' => $node->title),
                   variable_get('site_mail', ''));
     }
@@ -115,10 +115,9 @@ function hubspot_mail($key, &$message, $params) {
  * @param string $formURL HubSpot-provided POST URL to submit to
  * @param array $fields Form fields, such as name and contact info
  *
- * @return array with fields Data, Error, ErrorMessage, and HTTPCode.
- *         Error and ErrorMessage are the cURL error number and message,
- *         respectively (Error = 0 if no error), and HTTPCode is the HTTP
- *         response code of the request.
+ * @return array with fields Data, Error, and HTTPCode.
+ *         Error is the HTTP error message from drupal_http_request,
+ *         and HTTPCode is the HTTP response code of the request.
  */
 function hubspot_insert_lead($formURL, $fields) {
   $strPost = "";
@@ -131,22 +130,17 @@ function hubspot_insert_lead($formURL, $fields) {
   }
 
   $strPost = rtrim($strPost, '&'); // nuke the final ampersand
-
-  // intialize cURL and send POST data
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_POST, TRUE);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, $strPost);
-  curl_setopt($ch, CURLOPT_URL, $formURL);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
   
-  $resp = array('Data' => curl_exec($ch),
-                'Error' => curl_errno($ch),
-                'ErrorMessage' => curl_error($ch),
-                'HTTPCode' => curl_getinfo($ch, CURLINFO_HTTP_CODE));
+  // send POST data
   
-  curl_close($ch);
-
-  return $resp;
+  $r = drupal_http_request($formURL,
+                           array('headers' => array('Content-Type' => 'application/x-www-form-urlencoded'),
+                                 'method' => 'POST',
+                                 'data' => $strPost));
+  
+  return array('Data' => isset($r->data) ? $r->data : '',
+               'Error' => isset($r->error) ? $r->error : '',
+               'HTTPCode' => $r->code);
 }
 
 /**
@@ -289,7 +283,7 @@ function hubspot_block_view($delta = '') {
       // This part of the HubSpot API returns HTTP error codes on failure, with no message
       if (!empty($leads['Error']) || $leads['HTTPCode'] != 200) {
         $block['content'] = t('An error occurred when fetching the HubSpot leads data: @error',
-                              array('@error' => !empty($leads['ErrorMessage']) ? $leads['ErrorMessage'] :
+                              array('@error' => !empty($leads['Error']) ? $leads['Error'] :
                                     $leads['HTTPCode']));
         return $block;
       }
@@ -328,19 +322,13 @@ function hubspot_get_recent($n = 5) {
   $n = intval($n);
   
   if (empty($hapiKey)) {
-    return array('Error' => 1, 'ErrorMessage' => t('No HubSpot API key specified.'));
+    return array('Error' => t('No HubSpot API key specified.'));
   }
   
-  $hubSpotURL = "https://hubapi.com/leads/v1/list/?hapikey={$hapiKey}&sort=insertedAt&dir=desc&max={$n}";
-  
-  $ch = curl_init();
-  
-  curl_setopt($ch, CURLOPT_URL, $hubSpotURL);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  $result = curl_exec($ch);
-  
-  return array('Data' => json_decode($result), 'Error' => curl_errno($ch),
-               'ErrorMessage' => curl_error($ch), 'HTTPCode' => curl_getinfo($ch, CURLINFO_HTTP_CODE));
+  $r = drupal_http_request("https://hubapi.com/leads/v1/list/?hapikey={$hapiKey}&sort=insertedAt&dir=desc&max={$n}");
+
+  return array('Data' => json_decode($r->data), 'Error' => isset($r->error) ? $r->error : '',
+               'HTTPCode' => $r->code);
 }
 
 /**
