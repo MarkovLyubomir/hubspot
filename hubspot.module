@@ -66,7 +66,7 @@ function hubspot_webform_submission_insert($node, $submission) {
              array('@error' => $r['Error'], '%form' => $node->title), WATCHDOG_ERROR);
 
     if (variable_get('hubspot_debug_on', 0)) {
-      drupal_mail('hubspot', 'curl_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+      drupal_mail('hubspot', 'http_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
                   language_default(), array('errormsg' => $r['Error'], 'hubspot_url' => $hubSpotURL,
                                             'node_title' => $node->title),
                   variable_get('site_mail', ''));
@@ -92,8 +92,8 @@ function hubspot_mail($key, &$message, $params) {
   $message['subject'] = t('HubSpot leads insertion error');
 
   switch ($key) {
-    case 'curl_error':
-      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a cURL error occurred.',
+    case 'http_error':
+      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a HTTP error occurred.',
                              array('@form' => $params['node_title']));
       break;
     
