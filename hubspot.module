@@ -34,7 +34,18 @@ function hubspot_webform_submission_insert($node, $submission) {
   foreach ($submission->data as $cid => $data) {
     if ($node->webform['components'][$cid]['type'] == 'hubspot_url') {
       $hubSpotURL = $data['value'][0];
-      $fields = array_filter($node->webform['components'][$cid]['extra']['custom_fields']);
+      
+      if (isset($node->webform['components'][$cid]['extra']['custom_fields'])) {
+        $fields = array_filter($node->webform['components'][$cid]['extra']['custom_fields']);
+      }
+      else {
+        $fields = array();
+        foreach($node->webform['components'] as $k => $v) {
+          if ($cid != intval($v['cid'])) {
+            $fields[$v['cid']] = $v['cid'];
+          }
+        }
+      }
       
       $values = array();
       foreach ($fields as $cid) {
@@ -357,7 +368,7 @@ function hubspot_help($path, $arg) {
       $output .= '<li>' . t('Press Add New Form and specify the form name, email list, and lead nurturing campaign as desired.') . '</li>';
       $output .= '<li>' . t('Submit the form. HubSpot will now provide an API POST URL; save this somewhere.') . '</li>';
       $output .= '<li>' . t('In your Drupal admin, use the Add content page to create a new Webform. Enter as many questions ("components") as you\'d like. Name them according to the "Form field keys" section below.') . '</li>';
-      $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided and save the form.') . '</li>';
+      $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided, select which form fields should be sent to HubSpot, and save the form.') . '</li>';
       $output .= '</ol>';
       $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
       $output .= '<p>' . t('Please note that HubSpot applies a 500-character limit to each form field submitted, so you may want to set the "Maxlength" setting on the Webform fields appropriately.') . '</p>';
