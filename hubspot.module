@@ -30,57 +30,50 @@ function hubspot_menu() {
 function hubspot_webform_submission_insert($node, $submission) {
   if ($submission->is_draft == 1)
     return;
-
-  // Now, $submission->data is an array indexed by component ID.
-  // We must find the matching field names.
-  $values = array();
   
-  $hubSpotURL = '';
   foreach ($submission->data as $cid => $data) {
     if ($node->webform['components'][$cid]['type'] == 'hubspot_url') {
       $hubSpotURL = $data['value'][0];
-      continue; // omit HubSpot URL from POST
-    }
-
-    $component = $node->webform['components'][$cid]['form_key'];
-    $values[$component] = implode(',', $data['value']);
-  }
-
-  if (empty($hubSpotURL)) {
-    // We're only interested in forms with HubSpot URLs to POST to
-    return;
-  }
-
-  // These fields must be submitted with each request
-  $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
-  $values['IPAddress'] = ip_address();
-
-  $r = hubspot_insert_lead($hubSpotURL, $values);
-
-  if (empty($r['Error']) && strpos($r['Data'], 'successfully') !== FALSE) {
-    watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
-             array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
-  }
-  elseif (!empty($r['Error'])) {
-    watchdog('hubspot', 'HTTP error when submitting HubSpot data from Webform "%form": @error',
-             array('@error' => $r['Error'], '%form' => $node->title), WATCHDOG_ERROR);
-
-    if (variable_get('hubspot_debug_on', 0)) {
-      drupal_mail('hubspot', 'http_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-                  language_default(), array('errormsg' => $r['Error'], 'hubspot_url' => $hubSpotURL,
-                                            'node_title' => $node->title),
-                  variable_get('site_mail', ''));
-    }
-  }
-  else {
-    watchdog('hubspot', 'HubSpot error when submitting Webform "%form": @error',
-             array('@error' => $r['Data'], '%form' => $node->title), WATCHDOG_ERROR);
+      $fields = array_filter($node->webform['components'][$cid]['extra']['custom_fields']);
+      
+      $values = array();
+      foreach ($fields as $cid) {
+        $component = $node->webform['components'][$cid]['form_key'];
+        $values[$component] = implode(',', $submission->data[$cid]['value']);
+      }
+  
+      // These fields must be submitted with each request
+      $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
+      $values['IPAddress'] = ip_address();
     
-    if (variable_get('hubspot_debug_on', 0)) {
-      drupal_mail('hubspot', 'hub_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-                  language_default(), array('errormsg' => $r['Data'], 'hubspot_url' => $hubSpotURL,
-                                            'node_title' => $node->title),
-                  variable_get('site_mail', ''));
+      $r = hubspot_insert_lead($hubSpotURL, $values);
+    
+      if (empty($r['Error']) && strpos($r['Data'], 'successfully') !== FALSE) {
+        watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
+                 array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
+      }
+      elseif (!empty($r['Error'])) {
+        watchdog('hubspot', 'HTTP error when submitting HubSpot data from Webform "%form": @error',
+                 array('@error' => $r['Error'], '%form' => $node->title), WATCHDOG_ERROR);
+    
+        if (variable_get('hubspot_debug_on', 0)) {
+          drupal_mail('hubspot', 'http_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+                      language_default(), array('errormsg' => $r['Error'], 'hubspot_url' => $hubSpotURL,
+                                                'node_title' => $node->title),
+                      variable_get('site_mail', ''));
+        }
+      }
+      else {
+        watchdog('hubspot', 'HubSpot error when submitting Webform "%form": @error',
+                 array('@error' => $r['Data'], '%form' => $node->title), WATCHDOG_ERROR);
+        
+        if (variable_get('hubspot_debug_on', 0)) {
+          drupal_mail('hubspot', 'hub_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
+                      language_default(), array('errormsg' => $r['Data'], 'hubspot_url' => $hubSpotURL,
+                                                'node_title' => $node->title),
+                      variable_get('site_mail', ''));
+        }
+      }
     }
   }
 }
@@ -204,6 +197,22 @@ function _webform_edit_hubspot_url($component) {
     '#required' => TRUE,
     '#weight' => -10,
     '#maxlength' => 255,
+  );
+  
+  $form_fields = array();
+  $result = db_query('SELECT cid, form_key, name, type FROM {webform_component} WHERE type <> \'hubspot_url\' AND nid = :nid ORDER BY weight, name', array(':nid' => $component['nid']));
+  foreach ($result as $c) {
+    $form_fields[$c->cid] = sprintf('%s (%s)', $c->name, $c->form_key);
+  }
+  
+  $form['extra']['custom_fields'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Custom fields'),
+    '#options' => $form_fields,
+    '#default_value' => (isset($component['extra']['custom_fields'])) ? array_keys(array_filter($component['extra']['custom_fields'])) : array_keys($form_fields),
+    '#description' => t('Select which fields should be sent to HubSpot'),
+    '#weight' => 0,
+    '#required' => FALSE,
   );
 
   return $form;
