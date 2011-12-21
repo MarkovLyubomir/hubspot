@@ -17,7 +17,7 @@ function hubspot_admin_settings() {
     '#title' => t('HubSpot API Key'),
     '#type' => 'textfield',
     '#default_value' => variable_get('hubspot_apikey', ''),
-    '#description' => t('This can be <a href="https://hubapi.com/keys/get">requested from HubSpot</a> and is required for the Latest Leads dashboard block to function. Inserting leads does not require an API key.'),
+    '#description' => t('This can be <a href="https://api.hubspot.com/keys/get">requested from HubSpot</a> and is required for the Latest Leads dashboard block to function. Inserting leads does not require an API key.'),
   );
   
   $form['hapi']['hubspot_log_code'] = array(

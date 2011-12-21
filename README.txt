@@ -15,7 +15,7 @@ dashboard block, but is not required for submitting leads from Webform.
 
 You can request an API key from HubSpot through their website:
 
-https://hubapi.com/keys/get
+https://app.hubspot.com/keys/get
 
 The JavaScript tracking code can be found on the HubSpot Settings page, under
 External Site Traffic Logging. Copy and paste it directly into the
