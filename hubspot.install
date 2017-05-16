@@ -1,34 +1,64 @@
 <?php
+
 /**
  * @file
- * Handle install/uninstall and warn users of problems with disabled Webform components.
+ * Installation file for hubspot.
+ *
  */
+use Drupal\Core\Url;
 
 /**
- * Implements hook_install() to notify user of successful installation.
+ * Implements hook_install().
  */
 function hubspot_install() {
-  drupal_set_message(st('The HubSpot module has been successfully installed. Configure it in the !link.',
-                        array('!link' => l('HubSpot integration settings', 'admin/config/content/hubspot'))), 'status');
+  $site_mail = \Drupal::config('system.site')->get('mail');
+  \Drupal::configFactory()->getEditable('hubspot.settings')->set('hubspot_debug_email', $site_mail)->save();
+  drupal_set_message(t('The HubSpot module has been successfully installed. Configure it in the @link.', array(
+    '@link' => Drupal::l(t('HubSpot integration settings'), Url::fromRoute('hubspot.admin_settings')),
+  )), 'status');
+
 }
 
 /**
- * Implements hook_uninstall() to remove our saved variables and all traces of the hubspot_url component
+ * Implements hook_uninstall().
  */
 function hubspot_uninstall() {
-  variable_del('hubspot_debug_on');
-  variable_del('hubspot_debug_email');
-  variable_del('hubspot_apikey');
-  variable_del('hubspot_log_code');
-  
-  db_delete('webform_component')
-    ->condition('type', 'hubspot_url')
-    ->execute();
+  \Drupal::configFactory()->getEditable('hubspot.settings')->delete();
 }
 
 /**
- * Implements hook_disable() to warn of possible errors with HubSpot webforms.
+ * Implements hook_schema().
  */
-function hubspot_disable() {
-  drupal_set_message(st('With the HubSpot module disabled, you may experience errors viewing and editing your HubSpot-enabled forms. Delete the HubSpot POST URL field or uninstall this module entirely to clear the errors.'), 'warning');
+function hubspot_schema() {
+  $schema['hubspot'] = array(
+    'description' => 'Base table for hubspot. Stores field mappings from webform fields to hubspot form fields.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The (Webform type id)/(node id of the webform) for this row.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'hubspot_guid' => array(
+        'description' => 'The hubspot form guid for this row.',
+        'type' => 'text',
+      ),
+      'webform_field' => array(
+        'description' => 'The webform field key for this row.',
+        'type' => 'text',
+      ),
+      'hubspot_field' => array(
+        'description' => 'The hubspot field key for this row.',
+        'type' => 'text',
+      ),
+    ),
+    'indexes' => array(
+      'id' => array(
+        'id',
+        array('hubspot_guid', 128),
+        array('webform_field', 128),
+        array('hubspot_field', 128),
+      ),
+    ),
+  );
+  return $schema;
 }
