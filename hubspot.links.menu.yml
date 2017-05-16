@@ -1,0 +1,5 @@
+hubspot.admin_settings:
+  route_name: hubspot.admin_settings
+  title: 'HubSpot integration settings'
+  description: 'Set up HubSpot integration and leads insertion.'
+  parent: system.admin_config_services

@@ -74,3 +74,13 @@ Maintainers
 ---------------------
 
 nehajyoti (Jyoti Bohra)
+
+
+Sponsorship
+-----------
+
+This project is sponsored by Digett, a Drupal-friendly San Antonio web design
+company with a focus on inbound marketing. Need additional features or custom
+styling? Contact us.
+  http://www.digett.com/
+

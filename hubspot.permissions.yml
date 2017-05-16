@@ -1,0 +1,4 @@
+view recent hubspot leads:
+  title: 'View recent hubspot leads'
+  description: "View the recent leads block when it's enabled."
+  restrict access: TRUE

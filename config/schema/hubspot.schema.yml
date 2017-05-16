@@ -1,0 +1,16 @@
+hubspot.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    hubspot_log_code:
+      type: string
+    hubspot_access_token:
+      type: string
+    hubspot_portalid:
+      type: string
+    hubspot_debug_on:
+      type: integer
+    hubspot_refresh_token:
+      type: string
+    tracking_code_on:
+      type: integer
