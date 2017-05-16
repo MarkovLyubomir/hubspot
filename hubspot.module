@@ -1,403 +1,159 @@
 <?php
+
 /**
  * @file
- * Sends Webform results to HubSpot's Leads API by using Webform's provided hooks.
+ * Sends Webform results to HubSpot's Forms API.
  */
+
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Url;
+use GuzzleHttp\Exception\RequestException;
 
 /**
- * Implements hook_menu() to get the config page listed
+ * Implements hook_help().
  */
-function hubspot_menu() {
-  $items = array();
+function hubspot_help($route_name) {
+  $output = '';
+  switch ($route_name) {
+    case 'help.page.hubspot':
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created
+        with the Webform module to submit their data to HubSpot for leads tracking. It also allows you to easily embed
+        the HubSpot JavaScript tracking code in your site to track the visits of each lead. Further information is
+        available in the Drupal <a href="http://drupal.org/node/1195370">handbook pages for this module.</a>') . '</p>';
+      $output .= '<h3>' . t('Creating a HubSpot Webform') . '</h3>';
+      $output .= '<p>' . t("To have a Webform's data sent to HubSpot for leads tracking, complete the following steps:")
+        . '</p>';
+      $output .= '<ol>';
+      $output .= '<li>' . t('Connect to your HubSpot account from the HubSpot settings page (links below).') . '</li>';
+      $output .= '<li>' . t('From the Webform tab of any webform you will now see the HubSpot "subtab" link below. Click
+       on that link.') . '</li>';
+      $output .= '<li>' . t('On that page you will see a dropdown listing all of your HubSpot forms (set up from
+        HubSpot.com). Select the form you want to map to this Webform.') . '</li>';
+      $output .= '<li>' . t('Finally, just go through each Webform fields and map them to the HubSpot form fields
+        available in each dropdown. Click save and you\'re done!') . '</li>';
+      $output .= '</ol>';
+      $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot form you
+        configured.') . '</p>';
+      $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
+      $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site.
+        You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it
+        into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
+      break;
 
-  $items['admin/config/content/hubspot'] = array(
-    'title' => 'HubSpot integration settings',
-    'description' => 'Set up HubSpot integration and leads insertion.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('hubspot_admin_settings'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_NORMAL_ITEM,
-    'file' => 'hubspot.admin.inc',
-  );
-
-  return $items;
+    case 'hubspot.form_settings':
+      $output .= '<p>' . t("To post this form's results to HubSpot you will need to select the HubSpot form and map the
+        webform fields to the available HubSpot fields.") . '</p>';
+      break;
+  }
+  return $output;
 }
 
 /**
- * Intercepts the WebForm submission and send it off to HubSpot. Implements
- * hook_webform_submission_insert().
+ * Returns the default value for the given arguments.
  */
-function hubspot_webform_submission_insert($node, $submission) {
-  if ($submission->is_draft == 1)
-    return;
-  
-  foreach ($submission->data as $cid => $data) {
-    if ($node->webform['components'][$cid]['type'] == 'hubspot_url') {
-      $hubSpotURL = $data['value'][0];
-      
-      if (isset($node->webform['components'][$cid]['extra']['custom_fields'])) {
-        $fields = array_filter($node->webform['components'][$cid]['extra']['custom_fields']);
-      }
-      else {
-        $fields = array();
-        foreach($node->webform['components'] as $k => $v) {
-          if ($cid != intval($v['cid'])) {
-            $fields[$v['cid']] = $v['cid'];
-          }
-        }
-      }
-      
-      $values = array();
-      foreach ($fields as $cid) {
-        $component = $node->webform['components'][$cid]['form_key'];
-        $values[$component] = implode(',', $submission->data[$cid]['value']);
-      }
-  
-      // These fields must be submitted with each request
-      $values['UserToken'] = isset($_COOKIE['hubspotutk']) ? $_COOKIE['hubspotutk'] : '';
-      $values['IPAddress'] = ip_address();
-    
-      $r = hubspot_insert_lead($hubSpotURL, $values);
-    
-      if (empty($r['Error']) && strpos($r['Data'], 'successfully') !== FALSE) {
-        watchdog('hubspot', 'Webform "%form" results succesfully submitted to HubSpot. Response: @msg',
-                 array('@msg' => strip_tags($r['Data']), '%form' => $node->title), WATCHDOG_INFO);
-      }
-      elseif (!empty($r['Error'])) {
-        watchdog('hubspot', 'HTTP error when submitting HubSpot data from Webform "%form": @error',
-                 array('@error' => $r['Error'], '%form' => $node->title), WATCHDOG_ERROR);
-    
-        if (variable_get('hubspot_debug_on', 0)) {
-          drupal_mail('hubspot', 'http_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-                      language_default(), array('errormsg' => $r['Error'], 'hubspot_url' => $hubSpotURL,
-                                                'node_title' => $node->title),
-                      variable_get('site_mail', ''));
-        }
-      }
-      else {
-        watchdog('hubspot', 'HubSpot error when submitting Webform "%form": @error',
-                 array('@error' => $r['Data'], '%form' => $node->title), WATCHDOG_ERROR);
-        
-        if (variable_get('hubspot_debug_on', 0)) {
-          drupal_mail('hubspot', 'hub_error', variable_get('hubspot_debug_email', variable_get('site_mail', '')),
-                      language_default(), array('errormsg' => $r['Data'], 'hubspot_url' => $hubSpotURL,
-                                                'node_title' => $node->title),
-                      variable_get('site_mail', ''));
-        }
-      }
-    }
+function _hubspot_default_value($id, $hubspot_guid = NULL, $webform_field = NULL) {
+  if (empty($hubspot_guid)) {
+    return db_query_range("SELECT hubspot_guid FROM {hubspot} h WHERE h.id = :id", 0, 1, array(':id' => $id))->fetchField();
+  }
+  else {
+    return db_query_range("SELECT hubspot_field FROM {hubspot} h WHERE h.id = :id AND h.hubspot_guid = :guid AND h.webform_field = :webform_field", 0, 1, array(
+      ':id' => $id,
+      ':guid' => $hubspot_guid,
+      ':webform_field' => $webform_field,
+    ))->fetchField();
   }
 }
 
 /**
- * Implements hook_mail() to send error messages to the administrator.
+ * Gets the list of forms from HubSpot via the API.
+ */
+function _hubspot_get_forms() {
+  $access_token = \Drupal::config('hubspot.settings')->get('hubspot_access_token');
+
+  if (empty($access_token)) {
+    return array('error' => t('This site is not connected to a HubSpot Account.'));
+  }
+
+  $api = 'https://api.hubapi.com/contacts/v1/forms';
+  $options = [
+    'query' => ['access_token' => $access_token],
+  ];
+  $url = Url::fromUri($api, $options)->toString();
+  try {
+    $response = \Drupal::httpClient()->get($url);
+    $data = (string) $response->getBody();
+    return ['value' => Json::decode($data)];
+  }
+  catch (RequestException $e) {
+
+  }
+}
+
+/**
+ * Implements hook_mail().
  */
 function hubspot_mail($key, &$message, $params) {
   $message['subject'] = t('HubSpot leads insertion error');
 
   switch ($key) {
     case 'http_error':
-      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a HTTP error occurred.',
-                             array('@form' => $params['node_title']));
+      $message['body'][] = t('When attempting to submit the form "@form" to HubSpot, a HTTP error occurred.', array(
+        '@form' => $params['node_title'],
+      ));
       break;
-    
+
     case 'hub_error':
-      $message['body'][] = t('Upon submitting the Webform "@form" to HubSpot, an error was returned.',
-                             array('@form' => $params['node_title']));
+      $message['body'][] = t('Upon submitting the Webform "@form" to HubSpot, an error was returned.', array(
+        '@form' => $params['node_title'],
+      ));
       break;
   }
-  
+
   $message['body'][] = t('Error message: @message', array('@message' => $params['errormsg']));
   $message['body'][] = t('HubSpot POST URL: @url', array('@url' => $params['hubspot_url']));
-  $message['body'][] = t('To adjust the debugging settings, visit @url',
-                         array('@url' => url('admin/config/content/hubspot', array('absolute' => TRUE))));
+  $message['body'][] = t('To adjust the debugging settings, visit @url', array(
+    '@url' => Url::fromRoute('hubspot.admin_settings')->toString(),
+  ));
 }
 
 /**
- * Executes the HubSpot API POST to insert a lead
+ * Implements hook_page_attachments().
+ */
+function hubspot_page_attachments(&$page) {
+  // If tracking code is enabled then Attach the library.
+  if (\Drupal::config('hubspot.settings')->get('tracking_code_on')) {
+    $page['#attached']['library'][] = 'hubspot/hubspot.code_tracking';
+  }
+}
+
+/**
+ * Implements hook_library_info_build().
  *
- * @param string $formURL HubSpot-provided POST URL to submit to
- * @param array $fields Form fields, such as name and contact info
- *
- * @return array with fields Data, Error, and HTTPCode.
- *         Error is the HTTP error message from drupal_http_request,
- *         and HTTPCode is the HTTP response code of the request.
+ * Creates library info with dynamic script file name.
  */
-function hubspot_insert_lead($formURL, $fields) {
-  $strPost = "";
+function hubspot_library_info_build() {
+  $portal_id = \Drupal::config('hubspot.settings')->get('hubspot_portalid');
+  $libraries = [];
+  // Add a library whose information changes depending on certain conditions.
+  $libraries['hubspot.code_tracking'] = [
+    'dependencies' => [
+      'core/jquery',
+      'core/drupalSettings',
+    ],
+  ];
 
-  // Turn $fields into POST-compatible list of parameters
-  foreach ($fields as $fieldName => $fieldValue) {
-    $strPost .= urlencode($fieldName) . '=';
-    $strPost .= urlencode($fieldValue);
-    $strPost .= '&';
-  }
-
-  $strPost = rtrim($strPost, '&'); // nuke the final ampersand
-  
-  // send POST data
-  
-  $r = drupal_http_request($formURL,
-                           array('headers' => array('Content-Type' => 'application/x-www-form-urlencoded'),
-                                 'method' => 'POST',
-                                 'data' => $strPost));
-  
-  return array('Data' => isset($r->data) ? $r->data : '',
-               'Error' => isset($r->error) ? $r->error : '',
-               'HTTPCode' => $r->code);
-}
-
-/**
- * Creates a WebForm component to contain the form's HubSpot POST URL.
- * Implements hook_webform_component_info().
- */
-function hubspot_webform_component_info() {
-  return array(
-    'hubspot_url' => array(
-      'label' => t('HubSpot POST URL'),
-      'description' => t('A HubSpot API POST URL, to submit a form\'s contents to HubSpot Leads.'),
-      'features' => array(
-        'csv' => FALSE,
-        'email' => FALSE,
-        'title_display' => FALSE, // prevents the "Display" field from being displayed while editing the component
-        'required' => FALSE,
-      ),
-    ),
-  );
-}
-
-/**
- * Provides default values for this component.
- */
-function _webform_defaults_hubspot_url() {
-  return array(
-    'name' => 'HubSpot POST URL',
-    'form_key' => 'hubspot',
-    'pid' => 0,
-    'weight' => 0,
-    'value' => '',
-    'extra' => array(),
-  );
-}
-
-/**
- * Implements _webform_edit_component() to adjust the HubSpot POST URL edit page.
- */
-function _webform_edit_hubspot_url($component) {
-  $form = array();
-
-  // Disable Description box
-  $form['extra']['description'] = array();
-
-  $form['value'] = array(
-    '#type' => 'textfield',
-    '#title' => t('HubSpot POST URL'),
-    '#description' => t('The API POST URL provided under HubSpot\'s Lead API settings for this form.'),
-    '#default_value' => $component['value'],
-  );
-
-  // Hide display options
-  $form['display'] = array('#type' => 'markup');
-
-  // Overwrite the "Label" field to provide a better description
-  $form['name'] = array(
-    '#type' => 'textfield',
-    '#default_value' => $component['name'],
-    '#title' => t('Label'),
-    '#description' => t('The name of this field. This field will not be displayed to users submitting the form.'),
-    '#required' => TRUE,
-    '#weight' => -10,
-    '#maxlength' => 255,
-  );
-  
-  $form_fields = array();
-  $result = db_query('SELECT cid, form_key, name, type FROM {webform_component} WHERE type <> \'hubspot_url\' AND nid = :nid ORDER BY weight, name', array(':nid' => $component['nid']));
-  foreach ($result as $c) {
-    $form_fields[$c->cid] = sprintf('%s (%s)', $c->name, $c->form_key);
-  }
-  
-  $form['extra']['custom_fields'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Custom fields'),
-    '#options' => $form_fields,
-    '#default_value' => (isset($component['extra']['custom_fields'])) ? array_keys(array_filter($component['extra']['custom_fields'])) : array_keys($form_fields),
-    '#description' => t('Select which fields should be sent to HubSpot'),
-    '#weight' => 0,
-    '#required' => FALSE,
-  );
-
-  return $form;
-}
-
-/**
- * Implements _webform_render_component(). Render this as a hidden field.
- */
-function _webform_render_hubspot_url($component, $value = NULL) {
-  $element = array(
-    '#type' => 'hidden',
-    '#title' => check_plain($component['name']),
-    '#value' => isset($value[0]) ? $value[0] : $component['value'],
-    '#weight' => $component['weight'],
-  );
-
-  return $element;
-}
-
-/**
- * When displaying the form results to an admin, don't show the HubSpot URL.
- */
-function _webform_display_hubspot_url($component, $value, $format = 'html') {
-  return array();
-}
-
-/**
- * Implements hook_page_build() to inject the HubSpot JavaScript tracking code into
- * the page footer, just before </body>.
- */
-function hubspot_page_build(&$page) {
-  $page['page_bottom']['hubspot_code'] = array(
-    '#type' => 'markup',
-    '#markup' => variable_get('hubspot_log_code', ''),
-  );
-}
-
-/**
- * Implements hook_permission() to choose who gets to see the recent leads block
- */
-function hubspot_permission() {
-  return array('see recent hubspot leads' => array(
-           'title' => t('See recent HubSpot leads'),
-           'description' => t('View the recent leads block when it\'s enabled.'),
-           'restrict access' => TRUE));
-}
-
-/**
- * Implements hook_block_info() to provide a HubSpot recent leads block.
- */
-function hubspot_block_info() {
-  $blocks = array();
-  
-  $blocks['hubspot_recent'] = array(
-    'info' => t('HubSpot Recent Leads'),
-    'properties' => array('administrative' => TRUE),
-  );
-  
-  return $blocks;
-}
-
-/**
- * Implements hook_block_view() to provide a HubSpot recent leads block.
- */
-function hubspot_block_view($delta = '') {
-  $block = array();
-  
-  switch ($delta) {
-    case 'hubspot_recent':
-      if (!user_access('see recent hubspot leads')) {
-        return;
-      }
-      $block['subject'] = t('HubSpot Recent Leads');
-      
-      $leads = hubspot_get_recent();
-      
-      // This part of the HubSpot API returns HTTP error codes on failure, with no message
-      if (!empty($leads['Error']) || $leads['HTTPCode'] != 200) {
-        $block['content'] = t('An error occurred when fetching the HubSpot leads data: @error',
-                              array('@error' => !empty($leads['Error']) ? $leads['Error'] :
-                                    $leads['HTTPCode']));
-        return $block;
-      }
-      elseif (empty($leads['Data'])) {
-        $block['content'] = t('No leads to show.');
-        return $block;
-      }
-      
-      $block['content'] = array(
-        '#theme' => 'item_list',
-        '#items' => array(),
-        '#type' => 'ul',
-      );
-      
-      foreach($leads['Data'] as $lead) {
-        // Note that $lead->insertedAt comes in milliseconds, not seconds, since the epoch
-        $block['content']['#items'][] = l($lead->firstName . ' ' . $lead->lastName, $lead->leadLink) . ' ' .
-                                        t('(@time ago)', array('@time' => format_interval(time() - intval($lead->insertedAt / 1000))));
-      }
-      
-      break;
-  }
-  
-  return $block;
-}
-
-/**
- * Gets the most recent HubSpot leads
- *
- * Docs: http://docs.hubapi.com/wiki/Searching_Leads
- *
- * @param int $n Number of leads to fetch
- */
-function hubspot_get_recent($n = 5) {
-  $hapiKey = variable_get('hubspot_apikey', '');
-  $n = intval($n);
-  
-  if (empty($hapiKey)) {
-    return array('Error' => t('No HubSpot API key specified.'));
-  }
-  
-  $r = drupal_http_request("https://hubapi.com/leads/v1/list/?hapikey={$hapiKey}&sort=insertedAt&dir=desc&max={$n}");
-
-  return array('Data' => json_decode($r->data), 'Error' => isset($r->error) ? $r->error : '',
-               'HTTPCode' => $r->code);
-}
-
-/**
- * Implements hook_help() for the admin help page.
- */
-function hubspot_help($path, $arg) {
-  $output = '';
-  switch ($path) {
-    case 'admin/help#hubspot':
-      $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('The HubSpot module provides leads integration with the HubSpot API, allowing forms created with the Webform module to submit their data to HubSpot for leads tracking. It also allows you to easily embed the HubSpot JavaScript tracking code in your site to track the visits of each lead. Further information is available in the Drupal <a href="http://drupal.org/node/1195370">handbook pages for this module.</a>') . '</p>';
-
-      $output .= '<h3>' . t('Creating a HubSpot Webform') . '</h3>';
-      $output .= '<p>' . t('To have a Webform\'s data sent to HubSpot for leads tracking, complete the following steps:') . '</p>';
-      $output .= '<ol>';
-      $output .= '<li>' . t('Log in to your HubSpot account and visit the Settings page. Click the HubSpot Lead API link under Lead Management.') . '</li>';
-      $output .= '<li>' . t('Press Add New Form and specify the form name, email list, and lead nurturing campaign as desired.') . '</li>';
-      $output .= '<li>' . t('Submit the form. HubSpot will now provide an API POST URL; save this somewhere.') . '</li>';
-      $output .= '<li>' . t('In your Drupal admin, use the Add content page to create a new Webform. Enter as many questions ("components") as you\'d like. Name them according to the "Form field keys" section below.') . '</li>';
-      $output .= '<li>' . t('Finally, create a component named "hubspot" with the type "HubSpot POST URL". Supply the API POST URL in the box provided, select which form fields should be sent to HubSpot, and save the form.') . '</li>';
-      $output .= '</ol>';
-      $output .= '<p>' . t('The Webform will now automatically send any submissions directly to HubSpot via the POST URL you provided. You may customize, theme, or alter the form as much as you like, so long as the HubSpot POST URL field remains.') . '</p>';
-      $output .= '<p>' . t('Please note that HubSpot applies a 500-character limit to each form field submitted, so you may want to set the "Maxlength" setting on the Webform fields appropriately.') . '</p>';
-
-      $output .= '<h3>' . t('Form field keys') . '</h3>';
-      $output .= '<p>' . t('Each Webform component\'s "field key" specifies what the field will be named when sent to HubSpot. Certain field keys have significance with HubSpot. For example, submitting a field with the key "FirstName" allows HubSpot to automatically recognize it as the person\'s first name when displaying the lead information. Here is a list of HubSpot-recognized field keys:') . '</p>';
-      $output .= '<dl>';
-      $output .= '<dt>' . t('FirstName, LastName, and FullName') . '</dt>';
-      $output .= '<dd>' . t('Use FirstName or LastName to send those fields separately; send FullName for HubSpot to automatically split the name into first and last names.') . '</dd>';
-      $output .= '<dt>' . t('Email, Phone, Fax, Website, and TwitterHandle') . '</dt>';
-      $output .= '<dd>' . t('Specify these field keys to get the user\'s contact information recognized by HubSpot.') . '</dd>';
-      $output .= '<dt>' . t('Company, NumberEmployees, AnnualRevenue, and JobTitle') . '</dt>';
-      $output .= '<dd>' . t('Capture the user\'s employment information.') . '</dd>';
-      $output .= '<dt>' . t('Address, City, State, ZipCode, Country') . '</dt>';
-      $output .= '<dd>' . t('Capture the user\'s location.') . '</dd>';
-      $output .= '<dt>' . t('Message') . '</dt>';
-      $output .= '<dd>' . t('Allow the user to send a custom message.') . '</dd>';
-      $output .= '</dl>';
-      $output .= '<p>' . t('Specify these as the <strong>Field Key</strong> when adding components in your form. The field key is not shown to users filling out the form, but only used by HubSpot to display the data; the "Label" field specifies what your users will see.') . '</p>';
-      $output .= '<p>' . t('Note that you may provide other custom fields with any field key you like, if you have other data you wish to collect. HubSpot will store all data sent to it and display it in the "Form Data" tab when viewing each lead.') . '</p>';
-      $output .= '<p>' . t('Also, if you\'re using HubSpot\'s Salesforce integration, you must use field keys that correspond to the field\'s API Name in Salesforce.') . '</p>';
-      
-      $output .= '<h3>' . t('HubSpot Javascript tracking code') . '</h3>';
-      $output .= '<p>' . t('HubSpot supports using a JavaScript tracking system to analyze potential leads on your site. You can get the JavaScript code from your HubSpot settings, under External Site Traffic Logging, and paste it into the HubSpot integration settings page in Drupal to have it automatically included on every page.') . '</p>';
-      break;
-    
-    case 'node/%/webform':
-      $output .= '<p>' . t('If you\'d like this form\'s results to be posted to HubSpot\'s leads tracking system, make sure it has a "HubSput POST URL" component filled in with the information from the HubSpot Lead API page in your HubSpot settings.') . '</p>';
-      break;
-  }
-  return $output;
+  $libraries['hubspot.code_tracking'] += [
+    'js' => [
+      'https://js.hs-scripts.com/' . $portal_id . '.js' => [
+        'type' => 'external',
+        'attributes' => [
+          'id' => "hs-script-loader",
+          'defer' => TRUE,
+          'async' => TRUE,
+        ],
+      ],
+    ],
+  ];
+  return $libraries;
 }
