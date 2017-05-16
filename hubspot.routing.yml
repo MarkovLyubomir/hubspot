@@ -5,3 +5,17 @@ hubspot.admin_settings:
     _form: \Drupal\hubspot\Form\AdminSettings
   requirements:
     _permission: 'administer site configuration'
+hubspot.oauth_connect:
+  path: /hubspot/oauth
+  defaults:
+    _title: 'HubSpot OAuth redirect'
+    _controller: '\Drupal\hubspot\Controller\Controller::hubspotOauthConnect'
+  requirements:
+    _permission: 'administer site configuration'
+hubspot.form_settings:
+  path: '/node/{node}/webform/hubspot'
+  defaults:
+    _title: HubSpot
+    _form: \Drupal\hubspot\Form\FormSettings
+  requirements:
+    _permission: 'bypass node access+access content'
