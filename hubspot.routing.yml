@@ -1,0 +1,7 @@
+hubspot.admin_settings:
+  path: /admin/config/services/hubspot
+  defaults:
+    _title: 'HubSpot integration settings'
+    _form: \Drupal\hubspot\Form\AdminSettings
+  requirements:
+    _permission: 'administer site configuration'
