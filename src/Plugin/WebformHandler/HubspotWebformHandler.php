@@ -11,7 +11,7 @@ use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\Core\Mail\MailManager;
 use Drupal\Core\Url;
 use Drupal\node\NodeStorageInterface;
-use Drupal\webform\WebformHandlerBase;
+use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
@@ -27,8 +27,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   label = @Translation("HubSpot Webform Handler"),
  *   category = @Translation("External"),
  *   description = @Translation("Posts webform submissions to a Hubspot form."),
- *   cardinality = \Drupal\webform\WebformHandlerInterface::CARDINALITY_UNLIMITED,
- *   results = \Drupal\webform\WebformHandlerInterface::RESULTS_PROCESSED,
+ *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
+ *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
  */
 class HubspotWebformHandler extends WebformHandlerBase {
@@ -59,7 +59,7 @@ class HubspotWebformHandler extends WebformHandlerBase {
    *
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
-  protected $configFactory;
+  public $configFactory;
 
   /**
    * The logger factory.
@@ -78,8 +78,18 @@ class HubspotWebformHandler extends WebformHandlerBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerInterface $logger, EntityTypeManagerInterface $entity_type_manager, ClientInterface $httpClient, NodeStorageInterface $node_storage, Connection $connection, ConfigFactoryInterface $config_factory, LoggerChannelFactory $loggerChannelFactory, MailManager $mailManager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $logger, $entity_type_manager);
+  public function __construct(array $configuration,
+                              $plugin_id,
+                              $plugin_definition,
+                              LoggerInterface $logger,
+                              ConfigFactoryInterface $config_factory,
+                              EntityTypeManagerInterface $entity_type_manager,
+                              ClientInterface $httpClient,
+                              NodeStorageInterface $node_storage,
+                              Connection $connection,
+                              LoggerChannelFactory $loggerChannelFactory,
+                              MailManager $mailManager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $logger, $config_factory, $entity_type_manager);
     $this->httpClient = $httpClient;
     $this->nodeStorage = $node_storage;
     $this->connection = $connection;
@@ -97,11 +107,11 @@ class HubspotWebformHandler extends WebformHandlerBase {
       $plugin_id,
       $plugin_definition,
       $container->get('logger.factory')->get('webform.remote_post'),
+      $container->get('config.factory'),
       $container->get('entity_type.manager'),
       $container->get('http_client'),
       $container->get('entity.manager')->getStorage('node'),
       $container->get('database'),
-      $container->get('config.factory'),
       $container->get('logger.factory'),
       $container->get('plugin.manager.mail')
     );
@@ -205,7 +215,7 @@ class HubspotWebformHandler extends WebformHandlerBase {
       $from = $this->configFactory->get('site_mail');
       $data = (string) $response->getBody();
 
-      if ($response->getStatusCode() == '204') {
+      if (($response->getStatusCode() == '204') || ($response->getStatusCode() == '200')) {
         $this->loggerFactory->get('hubspot')->notice('Webform "%form" results succesfully submitted to HubSpot. Response: @msg', [
           '@msg' => strip_tags($data),
           '%form' => $form_title,
@@ -272,6 +282,13 @@ class HubspotWebformHandler extends WebformHandlerBase {
     unset($data['data']);
 
     return $data;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isExcluded() {
+    return $this->configFactory->get('webform.settings') ? TRUE : FALSE;
   }
 
 }
